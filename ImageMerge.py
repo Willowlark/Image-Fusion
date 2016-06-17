@@ -4,8 +4,9 @@ import os
 debug = 0
 diffnum = 50
 
+
 class Merger():
-    
+
     def __init__(self, outfile, base):
         """
         `Author`: Bill Clark
@@ -173,8 +174,8 @@ if __name__ == "__main__":
     path = os.path.dirname(__file__)
     diffnum = 120
     debug = 1
-    image1 = path + '/Input/Example 2 Picture 1.jpg'
-    image2 =  path + '/Input/Example 2 Picture 2.jpg'
+    image1 = path + '/Input/One Visual.jpg'
+    image2 =  path + '/Input/One Infrared.jpg'
     m = Merger(path + '/Output/ImF.png', image1)
     m.blkDiff(image2)
     m.merge(image2)
