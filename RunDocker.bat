@@ -1,6 +1,6 @@
-docker-machine env --shell cmd cdocker
-@FOR /f "tokens=*" %%i IN ('docker-machine env --shell cmd cdocker') DO @%%i
-set dock
+docker-machine env --shell cmd cdocker >nul
+@FOR /f "tokens=*" %%i IN ('docker-machine env --shell cmd cdocker') DO @%%i>nul
+set dock>nul
 docker-machine ls
 docker images
 set classify=/src/Libraries/tensorflow-0.6.0/tensorflow/models/image/imagenet/classify_image.py
