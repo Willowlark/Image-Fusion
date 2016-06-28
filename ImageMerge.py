@@ -1,13 +1,10 @@
 from PIL import Image
-import os
 
 debug = 0
-diffnum = 50
-
 
 class Merger():
 
-    def __init__(self, outfile, base):
+    def __init__(self, outfile):
         """
         `Author`: Bill Clark
 
@@ -25,51 +22,24 @@ class Merger():
             correctly so that only the edited pixels pick up as different.
         """
 
-        base = self.convertAll(base)
-        self.baseimage = Image.open(base[0])
-        self.basedata = self.baseimage.load()
-        self.baseimage.save(outfile)
+        self.initialized = 0
         self.outfile = outfile
-        self.base = base
+        self.outdata = None
+        self.checker = PixelChecker()
+        self.actor = PixelActor()
 
-    def merge(self, new):
-        """
-        `Author`: Bill Clark
-
-        Given a new image, with layers of paths and markers, on top of a plain base image. It will then
-        output the merged image to the outfile provided. This method only works with images encoded in RGB color,
-        which is expected of it's inputs. The method works by opening the tracked changes file, and opening the base
-        and the new image. Each pixel in the base is compared with the new image, if they're different enough the new
-        pixel is placed over the original base image pixel that was contained in the tracked file. This is done for
-        every pixel. Debug information contains the ratio of different to not different pixels in percent form, as well
-        as a display of the output after each layer merge.
-
-        `new`: A image with the same center and zoom as the class baseimage, which has lines or markers on it. It
-                    will be merged with the tracked outfile.
+    def setup(self, file):
         """
 
-        trackedimage = Image.open(self.outfile)
-        trackeddata = trackedimage.load()
+        :param file:
+        :return:
+        """
+        self.outimage = Image.open(file)
+        self.outdata = self.outimage.load()
+        self.outimage.save(self.outfile)
+        self.initialized = 1
 
-        topimage = Image.open(new)
-        topdata = topimage.load()
-        
-        counter = 0
-        for x in range(self.baseimage.size[0]):
-            for y in range(self.baseimage.size[1]):
-                bpix = self.basedata[x,y]
-                tpix = topdata[x,y]
-                if abs(bpix[0] - tpix[0]) > diffnum or abs(bpix[1] - tpix[1]) > diffnum or abs(bpix[2] - tpix[2]) > diffnum:
-                    trackeddata[x,y] = tpix
-                    counter += 1
-
-        if debug: print "Different Pixels:", counter, repr(round((counter/360000.)*100,2)) + '%', " Same Pixels:", \
-            360000-counter, repr(round(((360000-counter)/360000.)*100,2)) + '%'
-        if debug: trackedimage.show()
-
-        trackedimage.save(self.outfile)
-
-    def mergeAll(self, *images):
+    def merge(self, *images):
         """
         `Author`: Bill Clark
 
@@ -84,32 +54,65 @@ class Merger():
         `images`: Any number of image urls that are layers of the base image. Same center and zoom are a must.
         """
 
-        trackedimage = Image.open(self.outfile)
+        if not self.initialized:
+            self.setup(images[0])
+            images = images[1:]
 
-        trackeddata = trackedimage.load()
-        count = 0
-        for top in images:
-            topimage = Image.open(top)
-            topdata = topimage.load()
-            counter = 0
+        if len(images) > 0:
+            for image in images:
+                changed = self.checkAndAct(image)
 
+            if debug: self.printDiffSame(changed)
 
-            for x in range(self.baseimage.size[0]):
-                for y in range(self.baseimage.size[1]):
-                    bpix = self.basedata[x,y]
-                    tpix = topdata[x,y]
-                    if abs(bpix[0] - tpix[0]) > diffnum or abs(bpix[1] - tpix[1]) > diffnum or abs(bpix[2] - tpix[2]) > diffnum:
-                        trackeddata[x,y] = tpix
-                        counter += 1
+        if debug: self.outimage.show()
+        self.outimage.save(self.outfile)
 
-            if debug: print "Different Pixels:", counter, repr(round((counter/360000.)*100,2)) + '%', " Same Pixels:", \
-                360000-counter, repr(round(((360000-counter)/360000.)*100,2)) + '%'
-            if debug: trackedimage.show()
-            count += 1
-        print ""
-        trackedimage.save(self.outfile)
+    def mergeAs(self, outfile, *images):
+        """
+        `Author`: Bill Clark
 
-    def convertAll(self, *images):
+        This method will change the color of any pixel that is different between the base image and another provided
+        image. This works in the same way as mergeRGB, which does mean the inputs need to be RGB format. You can use
+        this to visually see the detected differences between two images.
+
+        `images`: the image to compare to base.
+
+        `outfile`: The file to write the color marked image to.
+        """
+
+        if not self.initialized:
+            self.setup(images[0])
+            images = images[1:]
+
+        if len(images) > 0:
+            for comparee in images:
+                changed = self.checkAndAct(comparee)
+
+            if debug: self.printDiffSame(changed)
+        if debug: self.outimage.show()
+
+        self.outimage.save(outfile)
+
+    def checkAndAct(self, img):
+        """
+
+        :param img:
+        :return:
+        """
+        compareimage = Image.open(img)
+        comparedata = compareimage.load()
+
+        counter = 0
+        for x in range(self.outimage.size[0]):
+            for y in range(self.outimage.size[1]):
+                currpixel = self.outdata[x, y]
+                comparepixel = comparedata[x, y]
+                if self.checker.check(currpixel, comparepixel):
+                    self.outdata[x, y] = self.actor.act(currpixel, comparepixel)
+                    counter += 1
+        return counter
+
+    def convert(self, *images):
         """
         `Author`: Bill Clark
 
@@ -126,55 +129,68 @@ class Merger():
         for image in images:
             img = Image.open(image)
             im = img.convert("RGBA")
-            ret.append(image[:-4]+'.con'+image[-4:])
+
             split = image.split('/')
             save = '/'.join(split[:-1]) + '/Converts/' + ''.join(split[-1:])
+
+            ret.append(save)
             im.save(save)
-            # im.save(image[:-4]+'.con'+image[-4:])
             count += 1
         return ret
 
-    def blkDiff(self, images, outfile=os.path.dirname(__file__) + "/Output/DifferenceFile.png"):
-        """
-        `Author`: Bill Clark
-
-        This method will change the color of any pixel that is different between the base image and another provided
-        image. This works in the same way as mergeRGB, which does mean the inputs need to be RGB format. You can use
-        this to visually see the detected differences between two images.
-
-        `images`: the image to compare to base.
-
-        `outfile`: The file to write the color marked image to.
+    def printDiffSame(self, counter):
         """
 
-        trackedimage = Image.open(self.outfile)
-        trackeddata = trackedimage.load()
+        :param counter:
+        :return:
+        """
+        print "Different Pixels:", counter, repr(round((counter/360000.)*100,2)) + '%', " Same Pixels:", \
+            360000-counter, repr(round(((360000-counter)/360000.)*100,2)) + '%'+ '\n'
 
-        topimage = Image.open(images)
-        topdata = topimage.load()
-        counter = 0
 
-        for x in range(self.baseimage.size[0]):
-            for y in range(self.baseimage.size[1]):
-                bpix = self.basedata[x,y]
-                tpix = topdata[x,y]
-                if abs(bpix[0] - tpix[0]) > diffnum or abs(bpix[1] - tpix[1]) > diffnum or abs(bpix[2] - tpix[2]) > diffnum:
-                    trackeddata[x,y] = (0,0,0,255)
-                    counter += 1
+class PixelChecker:
+    def __init__(self,):
+        self.diffnum = 120
 
-        if debug: print "Different Pixels:", counter, repr(round((counter/360000.)*100,2)) + '%', " Same Pixels:", \
-            360000-counter, repr(round(((360000-counter)/360000.)*100,2)) + '%'
-        if debug: trackedimage.show()
+    def check(self, p1, p2):
+        self.check = self.colorDiffGreater
+        return self.check()
 
-        if debug: print ""
-        trackedimage.save(outfile)
+    def colorDiffGreater(self, p1=None, p2=None):
+        if p1 and p2:
+            return abs(p1[0] - p2[0]) > self.diffnum \
+                   or abs(p1[1] - p2[1]) > self.diffnum \
+                   or abs(p1[2] - p2[2]) > self.diffnum
+        else:
+            self.check = self.colorDiff
+
+
+class PixelActor:
+    def __init__(self):
+        pass
+
+    def act(self, p1, p2):
+        self.act = self.redHighlight()
+        return self.act()
+
+    def redHighlight(self, p1=None, p2=None):
+        if p1 and p2:
+            return (255, 0, 0, 255)
+        else:
+            self.act = self.redHighlight
+
+    def takeNew(self, p1=None, p2=None):
+        if p1 and p2:
+            return p2
+        else:
+            self.act = self.takeNew
 
 if __name__ == "__main__":
-    path = os.path.dirname(__file__)
-    diffnum = 120
     debug = 1
-    image1 = path + '/Input/One Visual.jpg'
-    image2 =  path + '/Input/One Infrared.jpg'
-    m = Merger(path + '/Output/ImF.png', image1)
-    m.blkDiff(image2)
-    m.merge(image2)
+    inputs = ['Input/One Visual.jpg', 'Input/One Infrared.jpg']
+    m = Merger('Output/ImF.png')
+    m.actor.takeNew()
+    m.merge(inputs[0])
+    m.merge(inputs[1])
+    m.actor.redHighlight()
+    m.mergeAs('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
