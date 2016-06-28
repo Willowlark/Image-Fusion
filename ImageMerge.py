@@ -4,8 +4,9 @@ import os
 debug = 0
 diffnum = 50
 
+
 class Merger():
-    
+
     def __init__(self, outfile, base):
         """
         `Author`: Bill Clark
@@ -24,7 +25,6 @@ class Merger():
             correctly so that only the edited pixels pick up as different.
         """
 
-        self.mcount = 0
         base = self.convertAll(base)
         self.baseimage = Image.open(base[0])
         self.basedata = self.baseimage.load()
@@ -49,9 +49,9 @@ class Merger():
         """
 
         trackedimage = Image.open(self.outfile)
-        topimage = Image.open(new)
-
         trackeddata = trackedimage.load()
+
+        topimage = Image.open(new)
         topdata = topimage.load()
         
         counter = 0
@@ -67,7 +67,6 @@ class Merger():
             360000-counter, repr(round(((360000-counter)/360000.)*100,2)) + '%'
         if debug: trackedimage.show()
 
-        self.mcount += 1
         trackedimage.save(self.outfile)
 
     def mergeAll(self, *images):
@@ -107,8 +106,6 @@ class Merger():
                 360000-counter, repr(round(((360000-counter)/360000.)*100,2)) + '%'
             if debug: trackedimage.show()
             count += 1
-            self.mcount += 1
-
         print ""
         trackedimage.save(self.outfile)
 
@@ -130,7 +127,10 @@ class Merger():
             img = Image.open(image)
             im = img.convert("RGBA")
             ret.append(image[:-4]+'.con'+image[-4:])
-            im.save(image[:-4]+'.con'+image[-4:])
+            split = image.split('/')
+            save = '/'.join(split[:-1]) + '/Converts/' + ''.join(split[-1:])
+            im.save(save)
+            # im.save(image[:-4]+'.con'+image[-4:])
             count += 1
         return ret
 
@@ -173,8 +173,8 @@ if __name__ == "__main__":
     path = os.path.dirname(__file__)
     diffnum = 120
     debug = 1
-    image1 = path + '/Input/Example 2 Picture 1.jpg'
-    image2 =  path + '/Input/Example 2 Picture 2.jpg'
+    image1 = path + '/Input/One Visual.jpg'
+    image2 =  path + '/Input/One Infrared.jpg'
     m = Merger(path + '/Output/ImF.png', image1)
     m.blkDiff(image2)
     m.merge(image2)
