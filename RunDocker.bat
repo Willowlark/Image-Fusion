@@ -1,8 +1,10 @@
+docker-machine ls
+docker-machine start cdocker
 docker-machine env --shell cmd cdocker >nul
 @FOR /f "tokens=*" %%i IN ('docker-machine env --shell cmd cdocker') DO @%%i>nul
 set dock>nul
-docker-machine ls
 docker images
+REM Must be hard coded paths, modify offline for one's self.
 set classify=/src/Libraries/tensorflow-0.6.0/tensorflow/models/image/imagenet/classify_image.py
 set mnt="/c/Users/bill/Documents/Code Repositiories/Image-Fusion/:/src"
 
