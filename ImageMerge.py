@@ -2,6 +2,7 @@ from PIL import Image
 
 debug = 0
 
+
 class Merger():
 
     def __init__(self, outfile):
@@ -23,10 +24,14 @@ class Merger():
         """
 
         self.initialized = 0
+        self.autoSave = 0
+
         self.outfile = outfile
         self.outdata = None
+
         self.checker = PixelChecker()
         self.actor = PixelActor()
+        self.mergedFiles = []
 
     def setup(self, file):
         """
@@ -36,7 +41,7 @@ class Merger():
         """
         self.outimage = Image.open(file)
         self.outdata = self.outimage.load()
-        self.outimage.save(self.outfile)
+        if self.autoSave: self.save()
         self.initialized = 1
 
     def merge(self, *images):
@@ -62,10 +67,55 @@ class Merger():
             for image in images:
                 changed = self.checkAndAct(image)
 
+            self.mergedFiles.append(image)
             if debug: self.printDiffSame(changed)
 
-        if debug: self.outimage.show()
-        self.outimage.save(self.outfile)
+        if debug: self.show()
+        if self.autoSave: self.save()
+        
+    def testMerge(self, *images):
+        """
+        `Author`: Bill Clark
+
+        This merges a list of images, with layers of paths and markers, on top of a plain base image. It will then
+        output the merged image to the outfile provided. This method only works with images encoded in RGB color,
+        which is expected of it's inputs. The method works by creating a new file for the changes, and opening the base
+        and a layer. Each pixel in the base is compared with the layer, if they're different enough the layer pixel is
+        placed over the original base image pixel that was contained in the new file. This is done for every pixel and
+        every layer. Debug information contains the ratio of different to not different pixels in percent form, as well
+        as a display of the output after each layer merge.
+
+        `images`: Any number of image urls that are layers of the base image. Same center and zoom are a must.
+        """
+            
+        orig = self.outimage.copy()
+        state = self.autoSave
+
+        self.autoSave = 0
+        self.merge(*images)
+        self.autoSave = state
+
+        self.outimage = orig
+        self.outdata = self.outimage.load()
+
+    def exportMerge(self, outfile, *images):
+        """
+        `Author`: Bill Clark
+
+
+        """
+
+        orig = self.outimage.copy()
+        state = self.autoSave
+
+        self.autoSave = 0
+        self.merge(*images)
+        self.autoSave = state
+
+        self.save(self.outfile, outfile)
+
+        self.outimage = orig
+        self.outdata = self.outimage.load()
 
     def mergeAs(self, outfile, *images):
         """
@@ -80,18 +130,8 @@ class Merger():
         `outfile`: The file to write the color marked image to.
         """
 
-        if not self.initialized:
-            self.setup(images[0])
-            images = images[1:]
-
-        if len(images) > 0:
-            for comparee in images:
-                changed = self.checkAndAct(comparee)
-
-            if debug: self.printDiffSame(changed)
-        if debug: self.outimage.show()
-
-        self.outimage.save(outfile)
+        self.outfile = outfile
+        self.merge(*images)
 
     def checkAndAct(self, img):
         """
@@ -131,12 +171,21 @@ class Merger():
             im = img.convert("RGBA")
 
             split = image.split('/')
-            save = '/'.join(split[:-1]) + '/Converts/' + ''.join(split[-1:])
+            path = '/'.join(split[:-1]) + '/Converts/' + ''.join(split[-1:])
 
-            ret.append(save)
-            im.save(save)
+            ret.append(path)
+            im.save(path)
             count += 1
         return ret
+
+    def show(self, image=None):
+        if not image: image = self.outimage
+        image.show()
+
+    def save(self, image=None, outfile=None):
+        if not image: image = self.outimage
+        if not outfile: outfile = self.outfile
+        image.save(outfile)
 
     def printDiffSame(self, counter):
         """
@@ -162,7 +211,7 @@ class PixelChecker:
                    or abs(p1[1] - p2[1]) > self.diffnum \
                    or abs(p1[2] - p2[2]) > self.diffnum
         else:
-            self.check = self.colorDiff
+            self.check = self.colorDiffGreater
 
 
 class PixelActor:
@@ -185,12 +234,17 @@ class PixelActor:
         else:
             self.act = self.takeNew
 
+
 if __name__ == "__main__":
     debug = 1
     inputs = ['Input/One Visual.jpg', 'Input/One Infrared.jpg']
     m = Merger('Output/ImF.png')
+
     m.actor.takeNew()
     m.merge(inputs[0])
     m.merge(inputs[1])
+
     m.actor.redHighlight()
+    m.checker.diffnum = 30
     m.mergeAs('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+    m.save()
