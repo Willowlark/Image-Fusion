@@ -3,24 +3,22 @@ from PIL import Image
 debug = 0
 
 
-class Merger():
+class Merger:
 
     def __init__(self, outfile):
         """
         `Author`: Bill Clark
 
-        This class is basically the same method as mergemodeRGB, now the contained mergeAll method.
-        The add method is almost identical. The reason for this class is that it allows for urls to be
-        added incrementally with ease. Given an instance where you want to merge urls to the same outfile
-        based off the same base image, but don't have the urls all at once, this method allows for any number
-        of add calls to merge images to the output. This comes with over head, saving the image to the
-        outfile location after each individual merge, but certain situations really need this kind of functionality.
+        A merger is a class that allows for a number of images to merged sequentially. It is designed to
+        merge each image incrementally, outputting to an outfile when requested. There are a variety of
+        ways to preform the merges for different circumstance. The class contains an autosave feature that
+        will save the image after each merge, which is defaulted to off. There is also a contained PixelChecker
+        and PixelActor, which define how the merges process.
+        Merger works off an internal state. Each merge operation (irrelevant of number merged in that operation)
+        changes the state of the output data. Merge and MergeAs change the state permanently. ExportMerge and
+        TestMerge do not change the state of the output data.
 
-        `outfile`: The file address to save the output file to.
-
-        `base`: The unmodified image which all the layers will be drawn to. The images MUST line up, which is why
-            the center and zoom are REQUIRED. Those parameters being the same will line up the unchanged pixels
-            correctly so that only the edited pixels pick up as different.
+        `outfile`: The file address to save the output to.
         """
 
         self.initialized = 0
@@ -35,9 +33,13 @@ class Merger():
 
     def setup(self, file):
         """
+        `Author`: Bill Clark
 
-        :param file:
-        :return:
+        This method is called if a merge is activated and no prior merges have been done. It sets the image to
+        be merged as the output result, as nothing cannot be merged with an image object. This method is
+        internal and does not need to be called by a user. It is called if necessary from the merge methods.
+
+        `file`: A path to an image to initialize the Merge with.
         """
         self.outimage = Image.open(file)
         self.outdata = self.outimage.load()
@@ -48,15 +50,13 @@ class Merger():
         """
         `Author`: Bill Clark
 
-        This merges a list of images, with layers of paths and markers, on top of a plain base image. It will then
-        output the merged image to the outfile provided. This method only works with images encoded in RGB color,
-        which is expected of it's inputs. The method works by creating a new file for the changes, and opening the base
-        and a layer. Each pixel in the base is compared with the layer, if they're different enough the layer pixel is
-        placed over the original base image pixel that was contained in the new file. This is done for every pixel and
-        every layer. Debug information contains the ratio of different to not different pixels in percent form, as well
-        as a display of the output after each layer merge.
+        The main merge method. All other variants actually call this merge at some point in execution. The
+        method calls setup if no merges have been done prior so that merges can be done against the first.
+        This uses the checkandact method to operate on each image given to it. That method covers all the
+        actual pixel processing.
+        When debug is enabled, merge prints the percentage of different and same pixels.
 
-        `images`: Any number of image urls that are layers of the base image. Same center and zoom are a must.
+        `images`: Any number of image paths to merge together.
         """
 
         if not self.initialized:
@@ -77,57 +77,60 @@ class Merger():
         """
         `Author`: Bill Clark
 
-        This merges a list of images, with layers of paths and markers, on top of a plain base image. It will then
-        output the merged image to the outfile provided. This method only works with images encoded in RGB color,
-        which is expected of it's inputs. The method works by creating a new file for the changes, and opening the base
-        and a layer. Each pixel in the base is compared with the layer, if they're different enough the layer pixel is
-        placed over the original base image pixel that was contained in the new file. This is done for every pixel and
-        every layer. Debug information contains the ratio of different to not different pixels in percent form, as well
-        as a display of the output after each layer merge.
+        A test merge is a merge that doesn't save state. Each call to merge changes the internal data.
+        In the case a user wants to see the result of a merge without modifying the data, test merge will
+        do the job. Test merge is actually a call to exportmerge taking advantage of it's outfile variable.
 
-        `images`: Any number of image urls that are layers of the base image. Same center and zoom are a must.
+        `images`: Any number of image paths to be merged.
         """
-            
-        orig = self.outimage.copy()
-        state = self.autoSave
 
-        self.autoSave = 0
-        self.merge(*images)
-        self.autoSave = state
-
-        self.outimage = orig
-        self.outdata = self.outimage.load()
+        self.exportMerge(None, *images)
 
     def exportMerge(self, outfile, *images):
         """
         `Author`: Bill Clark
 
+        Export merge is a merge operation that does not change state. Unlike TestMerge, this merge will
+        write the temporary image to a given outfile. If the outfile is None, export will not write anything.
+        This side effect is how TestMerge works. Export merge turns off the autosave feature to be sure that
+        doesn't modify the main output file.
 
+        `images`: the image paths to be merged.
+
+        `outfile`: Where to set the new output path to.
         """
 
-        orig = self.outimage.copy()
-        state = self.autoSave
+        # Make a backup of the outimage if one has been initialized.
+        orig = None
+        if self.initialized: orig = self.outimage.copy()
 
+        # Saves the autosave state and merges.
+        state = self.autoSave
         self.autoSave = 0
         self.merge(*images)
         self.autoSave = state
 
-        self.save(self.outfile, outfile)
+        # If the outfile is None, show the image and continue. If an outfile exists, save the image instead.
+        if outfile is not None: self.save(self.outimage, outfile)
+        else:  self.show()
 
-        self.outimage = orig
-        self.outdata = self.outimage.load()
+        # If the back up was made, restore the status to before the last merge. Else, reset the object.
+        if orig is not None:
+            self.outimage = orig
+            self.outdata = self.outimage.load()
+        else:
+            self = Merger(self.outfile)
 
     def mergeAs(self, outfile, *images):
         """
         `Author`: Bill Clark
 
-        This method will change the color of any pixel that is different between the base image and another provided
-        image. This works in the same way as mergeRGB, which does mean the inputs need to be RGB format. You can use
-        this to visually see the detected differences between two images.
+        This is a variant of the main merge method. It changes the outfile permanently, functioning like
+        a save as option. Otherwise it differs completely to merge.
 
-        `images`: the image to compare to base.
+        `images`: the image paths to be merged.
 
-        `outfile`: The file to write the color marked image to.
+        `outfile`: Where to set the new output path to.
         """
 
         self.outfile = outfile
@@ -135,9 +138,16 @@ class Merger():
 
     def checkAndAct(self, img):
         """
+        `Author`: Bill Clark
 
-        :param img:
-        :return:
+        The primary action method. This method takes an image and merges it onto the output data stored
+        in the class. For every pixel in each image, the class's pixelChecker is used to compare them.
+        If the check returns true, the class's pixelActor is called to act on the pixels. For every acted on
+        pixel pair, the method's counter is increased. This count is returned as a statistic.
+
+        `img`: An image file to be merged onto the class's image.
+
+        `return`: The number of modified pixels.
         """
         compareimage = Image.open(img)
         comparedata = compareimage.load()
@@ -156,13 +166,13 @@ class Merger():
         """
         `Author`: Bill Clark
 
-        This method takes any number of images and converts the from P color mode to RGB mode. RGB is required by the
-        merge methods above. The files are saved to a different file, same prefix, but .con being placed at the end.
+        This method converts any number of given images to RGBA color format. Pixel comparision is done via
+        the rgb values, and requires the images to be in that format. The converted files are saved to
+        a Converts folder as to not fill ones input folder with temporary files.
 
-        `images`: The images that need to be converted. They are expected to be in P color mode, though other modes
-                may convert cleanly.
+        `images`: The images that need to be converted.
 
-        `return`: A list of the new file locations, since the file names have been changed.
+        `return`: A list of file paths leading to the convert images, which can passed to further methods.
         """
         ret = []
         count = 0
@@ -179,33 +189,91 @@ class Merger():
         return ret
 
     def show(self, image=None):
+        """
+        `Author`: Bill Clark
+
+        Shows the image if an image is given, otherwise defaults to the class's image.
+
+        `image`: The image to show, defaults to the image contained in the class.
+        """
         if not image: image = self.outimage
         image.show()
 
     def save(self, image=None, outfile=None):
+        """
+        `Author`: Bill Clark
+
+        Saves an image to disk. The image can be specified, other wise the class's image is defaulted to.
+        The outfile can also be optionally specified.
+
+        `image`: Defaults to the class's image unless specified. The image to be saved.
+
+        `outfile`: The location to save to. Defaults to the class's output path.
+        """
         if not image: image = self.outimage
         if not outfile: outfile = self.outfile
         image.save(outfile)
 
     def printDiffSame(self, counter):
         """
+        `Author`: Bill Clark
 
-        :param counter:
-        :return:
+        Prints the different pixel percentage and the same pixel percentage.
+
+        `counter`: The count of changed pixels in a merge operation. Obtained from checkandact.
         """
         print "Different Pixels:", counter, repr(round((counter/360000.)*100,2)) + '%', " Same Pixels:", \
             360000-counter, repr(round(((360000-counter)/360000.)*100,2)) + '%'+ '\n'
 
 
 class PixelChecker:
-    def __init__(self,):
+
+    def __init__(self):
+        """
+        `Author`: Bill Clark
+
+        This class contains methods used to compare pixels. A Merger needs a pixel checker to function.
+        The check method is the only method called automatically. All inputs should be pixel tuples, which
+        are in the format of (R,G,B,Alpha).
+        This class has the ability to overwrite the check method with alternate checks. Check is the only
+        method with required attributes. If an alternate check method is called directly, without parameters,
+        the check method is set to use that method. A user should only call those methods without parameters.
+        The reason they have those parameters is because they are given them once they've overwritten check.
+        The difference number is used in comparisons, a bar of how different colors have to be to be acted on.
+
+        """
         self.diffnum = 120
 
     def check(self, p1, p2):
+        """
+        `Author`: Bill Clark
+
+        Checks a pair of pixels. This method is overwritten by other checkers, which change the
+        actions it preforms to compare.
+
+        `p1`: First pixel to compare.
+
+        `p2`: Second pixel to compare.
+
+        `return`: Returns a boolean value indicating if the pixels should be acted on.
+        """
         self.check = self.colorDiffGreater
         return self.check()
 
     def colorDiffGreater(self, p1=None, p2=None):
+        """
+        `Author`: Bill Clark
+
+        Checks a pair of pixels. R, G, B are compared and if any of them have a difference greater than
+        the difference number, true is returned. If this method is called with no parameters, check is
+        overwritten with this method.
+
+        `p1`: First pixel to compare.
+
+        `p2`: Second pixel to compare.
+
+        `return`: Returns a boolean value indicating if the pixels should be acted on.
+        """
         if p1 and p2:
             return abs(p1[0] - p2[0]) > self.diffnum \
                    or abs(p1[1] - p2[1]) > self.diffnum \
@@ -216,19 +284,65 @@ class PixelChecker:
 
 class PixelActor:
     def __init__(self):
+        """
+        `Author`: Bill Clark
+
+        This class contains actions that will be performed on any pixel pair that were checked true by the
+        pixel checker. This class is required by Merger.
+        The act method is the only method called automatically. All inputs should be pixel tuples, which
+        are in the format of (R,G,B,Alpha).
+        This class has the ability to overwrite the check method with alternate checks. Act is the only
+        method with required attributes. If an alternate act method is called directly, without parameters,
+        the act method is set to use that method. A user should only call those methods without parameters.
+        The reason they have those parameters is because they are given them once they've overwritten act.
+        """
         pass
 
     def act(self, p1, p2):
+        """
+        `Author`: Bill Clark
+
+        Acts on a pair of pixels. This method is overwritten by other actors. If it has not been overwritten
+        when it was called, redHighlight is defaulted to.
+
+        `p1`: First pixel to compare.
+
+        `p2`: Second pixel to compare.
+
+        `return`: What the output data's pixel should be assigned to.
+        """
         self.act = self.redHighlight()
         return self.act()
 
     def redHighlight(self, p1=None, p2=None):
+        """
+        `Author`: Bill Clark
+
+        Acts on a pair of pixels. The output data is set to true red.
+
+        `p1`: First pixel to compare.
+
+        `p2`: Second pixel to compare.
+
+        `return`: What the output data's pixel should be assigned to.
+        """
         if p1 and p2:
             return (255, 0, 0, 255)
         else:
             self.act = self.redHighlight
 
     def takeNew(self, p1=None, p2=None):
+        """
+        `Author`: Bill Clark
+
+        Acts on a pair of pixels. The output data is set to the compared image's pixel.
+
+        `p1`: First pixel to compare.
+
+        `p2`: Second pixel to compare.
+
+        `return`: What the output data's pixel should be assigned to.
+        """
         if p1 and p2:
             return p2
         else:
@@ -236,15 +350,17 @@ class PixelActor:
 
 
 if __name__ == "__main__":
-    debug = 1
+    debug = 0
     inputs = ['Input/One Visual.jpg', 'Input/One Infrared.jpg']
     m = Merger('Output/ImF.png')
 
     m.actor.takeNew()
-    m.merge(inputs[0])
+    m.testMerge(inputs[0])
     m.merge(inputs[1])
 
     m.actor.redHighlight()
+
     m.checker.diffnum = 30
-    m.mergeAs('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+    m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+
     m.save()
