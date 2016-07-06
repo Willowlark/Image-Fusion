@@ -64,6 +64,9 @@ class PixelDecorator(PixelActor):
     def act(self, p1, p2):
         return self.actor.act(p1, p2)
 
+    def run(self, x1, y1, x2, y2):
+        return self.actor.run(x1, y1, x2, y2)
+
     def varAccess(self, var, new=None):
         return self.actor.varAccess(var, new)
 
@@ -98,10 +101,16 @@ class ExtractDeco(PixelDecorator):
         super(ExtractDeco, self).__init__(actor)
         self.pixels = []
 
-    def check(self, p1, p2):
-        pass
-
+    def run(self, x1, y1, x2, y2):
+        ret = self.actor.run(x1, y1, x2, y2)
+        if ret:
+            self.varAccess('lastx', x1)
+            self.varAccess('lasty', y1)
+        return ret
 
     def act(self, p1, p2):
-
-        pass
+        if self.varAccess('lastx') is not None and self.varAccess('lasty') is not None:
+            self.pixels.append((self.varAccess('lastx'), self.varAccess('lasty')))
+            self.varAccess('lastx', None)
+            self.varAccess('lasty', None)
+        return self.actor.act(p1, p2)

@@ -1,5 +1,5 @@
 from PIL import Image
-import PixelActor
+import PixelProcess
 
 debug = 0
 
@@ -27,7 +27,7 @@ class Merger:
 
         self.outfile = outfile
 
-        self.actor = PixelActor.PixelActor()
+        self.processor = PixelProcess.PixelRemote()
         self.mergedFiles = []
 
     def setup(self, file):
@@ -41,7 +41,7 @@ class Merger:
         `file`: A path to an image to initialize the Merge with.
         """
         self.outimage = Image.open(file)
-        self.actor.varAccess('outdata', self.outimage.load())
+        self.processor.outdata = self.outimage.load()
         if self.autoSave: self.save()
         self.initialized = 1
 
@@ -68,8 +68,8 @@ class Merger:
 
             self.mergedFiles.append(image)
             if debug: self.printDiffSame(changed)
+            if debug: self.show()
 
-        if debug: self.show()
         if self.autoSave: self.save()
         
     def testMerge(self, *images):
@@ -116,7 +116,7 @@ class Merger:
         # If the back up was made, restore the status to before the last merge. Else, reset the object.
         if orig is not None:
             self.outimage = orig
-            self.actor.varAccess('outdata', self.outimage.load())
+            self.processor.outdata = self.outimage.load()
         else:
             self = Merger(self.outfile)
 
@@ -149,12 +149,12 @@ class Merger:
         `return`: The number of modified pixels.
         """
         compareimage = Image.open(img)
-        self.actor.varAccess('comparedata', compareimage.load())
+        self.processor.comparedata = compareimage.load()
 
         counter = 0
         for x in range(self.outimage.size[0]):
             for y in range(self.outimage.size[1]):
-                counter += self.actor.run(x, y, x, y)
+                counter += self.processor.run(x, y, x, y)
         return counter
 
     def convert(self, *images):
@@ -225,15 +225,17 @@ if __name__ == "__main__":
     debug = 1
     inputs = ['Input/One Visual.jpg', 'Input/One Infrared.jpg']
     m = Merger('Output/ImF.png')
+    m.processor = PixelProcess.ExtractPixelRemote()
 
-    m.actor = PixelActor.ColorDiffChk(m.actor)
-    m.actor = PixelActor.SecondPixelActor(m.actor)
+    m.processor.setActorCommand(PixelProcess.TakeSecondCommand())
+    m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
     m.merge(inputs[0])
     m.merge(inputs[1])
+    print m.processor.pixels
 
-    m.actor = PixelActor.RedHighlightActor(m.actor)
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
 
-    m.actor.varAccess('diffnum', 30)
+    m.processor.checkcmd.diffnum = 30
     m.mergeAs('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
 
     m.save()
