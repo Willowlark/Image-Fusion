@@ -222,16 +222,31 @@ class Merger:
 
 
 if __name__ == "__main__":
-    debug = 1
+    debug = 0
     inputs = ['Input/One Visual.jpg', 'Input/One Infrared.jpg']
     m = Merger('Output/ImF.png')
     m.processor = PixelProcess.ExtractPixelRemote()
 
-    m.processor.setActorCommand(PixelProcess.TakeSecondCommand())
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
     m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
     m.merge(inputs[0])
     m.merge(inputs[1])
     print m.processor.pixels
+
+    im = Image.new("RGBA", m.outimage.size)
+    imdata = im.load()
+    for x in range(0, im.size[0]):
+        for y in range(0, im.size[1]):
+            if (x,y) in m.processor.pixels:
+                pix = list(m.processor.pixels[x,y])
+                pix.append(255)
+                print pix
+                imdata[x, y] = tuple(pix)
+            else:
+                imdata[x,y] = (0, 0, 0, 0)
+    im.show()
+    im.save('Output/Only Pixels.png')
+
 
     m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
 

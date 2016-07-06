@@ -60,7 +60,7 @@ class ExtractPixelRemote(PixelRemote):
 
     def __init__(self):
         super(ExtractPixelRemote, self).__init__()
-        self.pixels = []
+        self.pixels = {}
 
     def run(self, x1, y1, x2, y2):
         currpixel = self.outdata[x1, y1]
@@ -68,6 +68,6 @@ class ExtractPixelRemote(PixelRemote):
         if self.checkcmd.execute(currpixel, comparepixel):
             ret = self.actcmd.execute(currpixel, comparepixel)
             self.outdata[x1, y1] = ret
-            self.pixels.append(((x1, y1), ret))
+            self.pixels[(x1, y1)] = ret
             return 1
         return 0
