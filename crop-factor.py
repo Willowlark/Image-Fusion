@@ -2,6 +2,7 @@ from __future__ import division
 import math
 from PIL import Image
 from PIL.ExifTags import TAGS
+import os
 
 # consult link for more info
 #http://photoseek.com/2013/compare-digital-camera-sensor-sizes-full-frame-35mm-aps-c-micro-four-thirds-1-inch-type/
@@ -12,9 +13,13 @@ from PIL.ExifTags import TAGS
 # more info on this solution
 #http://stackoverflow.com/questions/22634518/how-to-get-distance-of-object-from-iphone-camera-using-image-exif-meta-data
 
-dict = {'1/2.5' : (4.29, 6.0), '1/2.3': (4.55, 5.6), '1/1.8': (5.32, 4.8)} # some useful sensor height to crop factor relations
-object_in_question = 0.0833 # Real vertical height of object being examined
-pixel_pct = 0.33    # precise portion of vertical pixel occupied by object
+# research on field of view
+#http://petapixel.com/2013/06/15/a-mathematical-look-at-focal-length-and-crop-factor/
+
+dict = {'1/3.0': (3.6, 7.2), '1/2.5' : (4.29, 6.0), '1/2.3': (4.55, 5.6), '1/1.8': (5.32, 4.8)} # some useful sensor height to crop factor relations
+object_in_question = 2.0 # Real vertical height of object being examined
+pixel_pct = 0.1    # precise portion of vertical pixel occupied by object
+directory = os.path.dirname(os.path.realpath(__file__))
 
 def get_exif(path_name):
     ret = {}
@@ -45,19 +50,17 @@ if __name__ == "__main__":
     global object_in_question
     global pixel_pct
     try:
-        tags = get_exif('C:\Users\Bob S\Desktop\\IMG_0941.jpg')
+        tags = get_exif(directory + '/Input/IMG_0941.jpg')
         print tags
 
-        f = float(tags['LensModel'][22:26])
-
-        print tags['SensingMethod']
+        f = float([s for s in str.split(str(tags['LensModel'])) if s.__contains__('mm')][0][0:4])
 
         print "f", f
-        print "dist", distance_given_height_in_pixels(pixel_pct, dict['1/2.3'][0], f)
+        print "dist", distance_given_height_in_pixels(pixel_pct, dict['1/3.0'][0], f)
     except Exception as e:
         print e
         a = object_in_question # height in meters
         d = 10 # in meters
 
         f = find_focal_length((a*1000), (d*1000), dict['1/2.3'][0])
-        print "dist", distance_given_height_in_pixels(pixel_pct, dict['1/2.3'][0], f)
+        print "dist", distance_given_height_in_pixels(pixel_pct, dict['1/3.0'][0], f)

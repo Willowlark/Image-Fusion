@@ -16,7 +16,7 @@ class ortho_rectification(object):
         :param know_height: known height of object being rectified
         """
         self.known_height = know_height
-        self.regression = stats.linregress([1/i for i in x],y)
+        self.regression = stats.linregress([1/i for i in x],[math.log(i) for i in y])
 
     def find_distance_from_aperture(self, perceived_height):
         """
@@ -50,6 +50,10 @@ if __name__ == "__main__":
     print "1/100 the size"
     print "control", OR.find_distance_from_aperture(1.8716) / 100, OR.find_distance_from_aperture(1.6684) / 100
     print "deviated", OR1.find_distance_from_aperture(1.8716) / 100, OR2.find_distance_from_aperture(1.6684) / 100
+
+    print "1/1000 the size"
+    print "control", OR.find_distance_from_aperture(.18716) / 100, OR.find_distance_from_aperture(.16684) / 100
+    print "deviated", OR1.find_distance_from_aperture(.18716) / 100, OR2.find_distance_from_aperture(.16684) / 100
 
 
 
