@@ -23,9 +23,14 @@ import warnings
 #http://www.scantips.com/lights/fieldofview.html#top
 
 debug = 0
+test_factor = 1 # set to manually control the ratio of the case from which focal length is determined to the known test case
+
+# some useful sensor height to crop factor relations
 dict = {'1/3.2': (3.42, 7.6), '1/3.0': (3.6, 7.2), '1/2.6': (4.1, 6.3), '1/2.5' : (4.29, 6.0), '1/2.3': (4.55, 5.6), '1/1.8': (5.32, 4.8), '1/1.7': (5.64, 4.7), '2/3': (6.6, 3.9), '16mm': (7.49, 3.4), '1': (8.80, 2.7), '4/3': (13,2.0), 'Imax': (52.63, 0.49)} # some useful sensor height to crop factor relations
-object_in_question = 0.115 # Real vertical height of object being examined in meters
-pixel_pct = 0.0    # precise portion of vertical pixel occupied by object
+key = None
+
+object_in_question = 0.115  # Real vertical height of object being examined in meters
+pix_pct = 0.0               # precise portion of vertical pixel occupied by object
 
 directory = os.path.dirname(os.path.realpath(__file__))
 image = directory + '\\Input\\IMG_0943.jpg'
@@ -52,20 +57,26 @@ def get_exif(path):
         ret[decoded] = value
     return ret
 
-def find_distance_given_height_in_pixels(height_pct, height_of_sensor_mm, focal_len_mm):
+def find_distance_given_height_secondary(height_pct, height_of_sensor_mm, focal_len_mm):
     global object_in_question
     theta = math.atan((height_pct * height_of_sensor_mm) / focal_len_mm)  # if height of object is X pct of the pixels, then it must also be X pct of the sensor height in mm
     goal_distance = object_in_question / math.tan(theta)
     return goal_distance
 
-def find_distance_given_height_2(obj_heigth_px, focal_len):
+def find_distance_given_height_primary(obj_heigth_px, focal_len):
     global object_in_question
     test_angle = math.atan(obj_heigth_px / focal_len)
     goal_dist = object_in_question / math.tan(test_angle)
     return goal_dist
 
+def find_key(fnumber):
+    pass
+    # 35 mm eq.Focal Length = Actual Focal Length * Crop Factor
+    #https://mayukhmukherjee.wordpress.com/tag/crop-factor/
 
 def find_sensor_height(image_height):
+    # useless so far
+
     dimensions = get_object_px(image)
     pix_pct = (dimensions[1] / dimensions[2])
     sensor_height = pix_pct / get_exif(image)['YResolution'][0]
@@ -75,10 +86,6 @@ def find_sensor_height(image_height):
 
     return sensor_height
 
-def get_focal_length_given_fnumber(fnumber, diameter_entrance_pupil):
-    # https://en.wikipedia.org/wiki/F-number
-    return diameter_entrance_pupil * fnumber
-
 def calibrate_focal_len(set_distance_of_object, object_height_px):
     a = object_in_question      # height in meters
     d = set_distance_of_object  # in meters
@@ -87,51 +94,86 @@ def calibrate_focal_len(set_distance_of_object, object_height_px):
     focal_len_px = object_height_px / math.tan(control_angle)
     return focal_len_px
 
+def print_tags(tags):
+    print "tags;"
+    for key, val in tags.iteritems():
+        print key, ": ", val
+
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
 
     if not debug:
+        global test_factor
         global object_in_question
         global pixel_pct
         dimensions = get_object_px(image)
         pix_pct = dimensions[0] / dimensions[1]
+        dist = None
 
-        print ("attempting to investigate EXIF tags...")
+        print ("attempting to determine focal len using known properties (best)...")
         try:
+            pix_pct = (dimensions[0] / test_factor) / dimensions[1]
             print "pix pct", pix_pct
-            tags = get_exif(image)
-            print "tags", tags
 
-            focal_len = float([s for s in str.split(str(tags['LensMode'])) if s.__contains__('mm')][0][0:4])
-            print "focal len mm", focal_len
+            focal_len = calibrate_focal_len(1, dimensions[0])
+            print "focal len px", focal_len
 
-            print "dist", find_distance_given_height_in_pixels(pix_pct, dict['1/3.0'][0], focal_len)
+            dist = find_distance_given_height_primary((dimensions[0] / test_factor), focal_len)
+            # raise Exception
 
         except Exception as e:
             sys.stderr.write("Failed.\n")
             traceback.print_exc()
 
-            print ("attempting to determine focal len using known properties...")
+            print ("attempting to investigate EXIF tags for focal len and sensor size (second best, method 1)...")
             try:
-                focal_len = calibrate_focal_len(1, dimensions[0])
-                print "focal len px", focal_len
+                pix_pct = (dimensions[0] / test_factor) / dimensions[1]
+                print "pix pct", pix_pct
 
-                print "dist", find_distance_given_height_2(dimensions[0], focal_len)
-                # print "dist", (focal_len * (object_in_question * 1000) * pixel_pct[1]) / (pixel_pct[2] * dict['1/2.3'][0])
+                tags = get_exif(image)
+                print_tags(tags)
+
+                # focal_len = float([s for s in str.split(str(tags['LensModel'])) if s.__contains__('mm')][0][0:4])
+                focal_len = int(tags['FocalLength'][0]) / int(tags['FocalLength'][1])
+                print "focal len mm", focal_len
+
+                dist = find_distance_given_height_secondary(pix_pct, dict['1/3.0'][0], focal_len)
+                # raise Exception
 
             except Exception as e:
                 sys.stderr.write("Failed.\n")
                 traceback.print_exc()
 
-                print ("attempting to determine discover subject distance in EXIF...")
+                print ("attempting to investigate EXIF tags for focal len and sensor size (second best method 2)...")
                 try:
-                    print "dist", get_exif(image)['SubjectDistance']  # maybe useful, determined from center of focus in digital cameras
+                    pix_pct = (dimensions[0] / test_factor) / dimensions[1]
+                    print "pix pct", pix_pct
+
+                    tags = get_exif(image)
+                    print "tags", tags
+
+                    # focal_len = float([s for s in str.split(str(tags['LensModel'])) if s.__contains__('mm')][0][0:4])
+                    focal_len = float(tags['FocalLength'][0]) / float(tags['FocalLength'][1])
+                    print "focal len mm", focal_len
+
+                    dist = (focal_len * (object_in_question * 1000) * dimensions[1]) / ((dimensions[0] / test_factor) * dict['1/3.0'][0]) / 1000
+
                 except Exception as e:
-                    sys.stderr.write("Failed.")
+                    sys.stderr.write("Failed.\n")
                     traceback.print_exc()
-                    print "solution attempts exhausted, retiring\n"
+
+                    print ("attempting to discover subject distance in EXIF (worst case)...")
+                    try:
+                        dist = get_exif(image)['SubjectDistance']  # maybe useful, determined from center of focus in digital cameras
+                    except Exception as e:
+                        sys.stderr.write("Failed.")
+                        traceback.print_exc()
+                        print "solution attempts exhausted, retiring\n"
+        print "dist", dist
 
     else:
-        pixel_pct = get_pct_of_height(image)
-        print "pix pct", pixel_pct[0]
-        print "sensor height", find_sensor_height(pixel_pct[1])
+        dimensions = get_object_px(image)
+        pix_pct = dimensions[0] / dimensions[1]
+        print "pix pct", pix_pct
+
+        print key, find_key(get_exif(image)['FNumber'])
