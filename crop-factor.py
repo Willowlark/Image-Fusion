@@ -28,7 +28,7 @@ test_factor = 0.134 # set to manually control the ratio of the case from which f
 dict = {'1/3.2': (3.42, 7.6), '1/3.0': (3.6, 7.2), '1/2.6': (4.1, 6.3), '1/2.5' : (4.29, 6.0), '1/2.3': (4.55, 5.6), '1/1.8': (5.32, 4.8), '1/1.7': (5.64, 4.7), '2/3': (6.6, 3.9), '16mm': (7.49, 3.4), '1': (8.80, 2.7), '4/3': (13,2.0), 'Imax': (52.63, 0.49)} # some useful sensor height to crop factor relations
 key = None
 
-object_in_question = 0.115  # Real vertical height of object being examined in meters
+height_object_in_question = 0.115  # Real vertical height of object being examined in meters
 pix_pct = 0.0               # precise portion of vertical pixel occupied by object
 
 directory = os.path.dirname(os.path.realpath(__file__))
@@ -82,7 +82,7 @@ def find_distance_given_height_secondary(height_pct, sensor_height_mm, focal_len
     `focal_len_mm the known focal len of the sensor in millimeters
     `return` the determined distance of the object from the camera in units of object_in_question
     """
-    global object_in_question
+    global height_object_in_question
     theta = math.atan((height_pct * sensor_height_mm) / focal_len_mm)  # if height of object is X pct of the pixels, then it must also be X pct of the sensor height in mm
     goal_dist = object_in_question / math.tan(theta)
     return goal_dist
@@ -94,7 +94,7 @@ def find_distance_given_height_primary(obj_height_px, focal_len_px):
     `obj_height_px` the height of the object in pixels
     `return` the determined distance of the object from the camera in units of object_in_question
     """
-    global object_in_question
+    global height_object_in_question
     test_angle = math.atan(obj_height_px / focal_len_px)
     goal_dist = object_in_question / math.tan(test_angle)
     return goal_dist
@@ -135,7 +135,7 @@ def calibrate_focal_len(control_object_distance, control_object_height_px):
     `control_object_height_px` the fixed, measured height in pixels of teh object's visage in the digital photo
     `return` focal length in pixels
     """
-    a = object_in_question      # height in meters
+    a = height_object_in_question      # height in meters
     d = control_object_distance  # in meters
 
     control_angle = math.atan(a / d)    # achieve theta for this controlled case
@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
     if not debug:
         global test_factor
-        global object_in_question
+        global height_object_in_question
         global pixel_pct
         dimensions = get_object_px(image)
         pix_pct = dimensions[0] / dimensions[1]
@@ -211,7 +211,7 @@ if __name__ == "__main__":
                     find_key(tags['FocalLengthIn35mmFilm'], float(tags['FocalLength'][0]) / float(tags['FocalLength'][1]))
                     print "determined key", key + "\""
 
-                    dist = (focal_len * (object_in_question * 1000) * dimensions[1]) / ((dimensions[0] / test_factor) * dict[key][0]) / 1000
+                    dist = (focal_len * (height_object_in_question * 1000) * dimensions[1]) / ((dimensions[0] / test_factor) * dict[key][0]) / 1000
 
                 except Exception as e:
                     sys.stderr.write("Failed.\n")
