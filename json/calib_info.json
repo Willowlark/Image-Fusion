@@ -1,5 +1,6 @@
 {
-    "height_object_in_question": "0.115", 
+    "height_object_in_question": 0.115, 
+    "focal_len": 278.2608695652174, 
     "calibration_image": "C:\\\\Users\\\\Bob S\\\\PycharmProjects\\\\Image-Fusion\\\\Input\\\\IMG_0942.jpg", 
-    "dist_object_in_question": "1.0"
+    "dist_object_in_question": 1.0
 }

@@ -12,18 +12,14 @@ import json
 
 class Solution:
 
-    def __init__(self, infile):
-        self.test_factor = 0.10  # set to manually control the ratio of the case from which focal length is determined to the known test case
+    def __init__(self, infile, known_height):
+        self.test_factor = 0.1  # set to manually control the ratio of the case from which focal length is determined to the known test case
         self.test_image = infile
+        self.height_object_in_question = known_height
         self.key = None
+        self.focal_len = None
 
         directory = os.path.dirname(os.path.realpath(__file__))
-
-        with open(directory + '\\json\\calib_info.json', 'r') as fp:
-            json_data = json.load(fp)
-            self.height_object_in_question = json_data["height_object_in_question"]
-            self.dist_object_in_question = json_data["dist_object_in_question"]
-            self.calibration_image = json_data["calibration_image"]
 
         with open(directory + '\\json\\cameras.json', 'r') as data_file:
             data = json.load(data_file)
@@ -49,7 +45,7 @@ class Solution:
         # region.show()
         # print "img dimensions", img_width, "x", img_height, "px"
 
-        return obj_height_px, img_height
+        return obj_height_px * self.test_factor, img_height
 
     def get_exif(self, path):
         """
@@ -76,7 +72,7 @@ class Solution:
         `return` the determined distance of the object from the camera in units of height_object_in_question
         """
         theta = math.atan((height_pct * sensor_height_mm) / focal_len_mm)  # if height of object is X pct of the pixels, then it must also be X pct of the sensor height in mm
-        goal_dist = self.height_object_in_question / math.tan(theta)
+        goal_dist = float(self.height_object_in_question) / math.tan(theta)
         return goal_dist
 
     def find_distance_given_height_primary(self, obj_height_px, focal_len_px):
@@ -87,7 +83,7 @@ class Solution:
         `return` the determined distance of the object from the camera in units of height_object_in_question
         """
         test_angle = math.atan(obj_height_px / focal_len_px)
-        goal_dist = self.height_object_in_question / math.tan(test_angle)
+        goal_dist = float(self.height_object_in_question) / math.tan(test_angle)
         return goal_dist
 
     def find_key(self, eq_focal_len, act_focal_len):
@@ -105,18 +101,6 @@ class Solution:
                 key = k
                 break
 
-    def find_sensor_height(self, image_height):
-        # useless so far
-        # maybe used to find sensor height in mm
-        dimensions = self.get_object_px(self.calibration_image)
-        pix_pct = (dimensions[1] / dimensions[2])
-        sensor_height = pix_pct / self.get_exif(self.calibration_image)['YResolution'][0]
-
-        if self.get_exif(self.calibration_image)['ResolutionUnit'] is 2:
-            sensor_height = sensor_height * 25.4
-
-        return sensor_height
-
     def calibrate_focal_len(self, control_object_distance, control_object_height_px):
         """
         this method will find the necessary value for focal length using the founding principles of similar angles applied using trigonometry
@@ -127,10 +111,7 @@ class Solution:
         `control_object_height_px` the fixed, measured height in pixels of teh object's visage in the digital photo
         `return` focal length in pixels
         """
-        a = self.height_object_in_question  # height in meters
-        d = control_object_distance  # in meters
-
-        control_angle = math.atan(a / d)  # achieve theta for this controlled case
+        control_angle = math.atan(self.height_object_in_question / control_object_distance)  # achieve theta for this controlled case
         focal_len_px = control_object_height_px / math.tan(control_angle)
         return focal_len_px
 
@@ -139,19 +120,27 @@ class Solution:
 
 class Primary(Solution):
 
-    def __init__(self, infile):
-        Solution.__init__(self, infile)
+    def __init__(self, infile, known_height):
+        Solution.__init__(self, infile, known_height)
+
+        with open(directory + '\\json\\calib_info.json', 'r') as fp:
+            json_data = json.load(fp)
+            try:
+                self.focal_len = json_data["focal_len"]
+            except KeyError as ke:
+                sys.stderr.write("WARNING no focal length found, primary method will fail.\n")
+                sys.stderr.write(str(ke))
     
     def find_distance(self):
         try:
             dimensions = self.get_object_px(self.test_image)
-            pix_pct = (dimensions[0] * self.test_factor) / dimensions[1]
+            pix_pct = dimensions[0] / dimensions[1]
             # print "pix pct", pix_pct
 
-            focal_len = self.calibrate_focal_len(self.dist_object_in_question, self.get_object_px(self.calibration_image)[0])
-            # print "focal len px", focal_len
+            # focal_len = self.calibrate_focal_len(self.dist_object_in_question, self.get_object_px(self.calibration_image)[0])
+            # # print "focal len px", focal_len
 
-            dist = self.find_distance_given_height_primary((dimensions[0] * self.test_factor), focal_len)
+            dist = self.find_distance_given_height_primary(dimensions[0], self.focal_len)
             return dist
 
         except Exception as e:
@@ -160,26 +149,26 @@ class Primary(Solution):
 
 class Secondary(Solution):
 
-    def __init__(self, infile):
-        Solution.__init__(self, infile)
+    def __init__(self, infile, known_height):
+        Solution.__init__(self, infile, known_height)
     
     def find_distance(self):
         try:
             dimensions = self.get_object_px(self.test_image)
-            pix_pct = (dimensions[0] * self.test_factor) / dimensions[1]
+            pix_pct = dimensions[0] / dimensions[1]
             # print "pix pct", pix_pct
 
-            tags = self.get_exif(self.calibration_image)
+            tags = self.get_exif(self.test_image)
             # pprint(tags)
 
             # focal_len = float([s for s in str.split(str(tags['LensModel'])) if s.__contains__('mm')][0][0:4])
-            focal_len = int(tags['FocalLength'][0]) / int(tags['FocalLength'][1])
+            self.focal_len = int(tags['FocalLength'][0]) / int(tags['FocalLength'][1])
             # print "focal len mm", focal_len
 
             self.find_key(tags['FocalLengthIn35mmFilm'], float(tags['FocalLength'][0]) / float(tags['FocalLength'][1]))
             # print "determined key", key + "\""
 
-            dist = self.find_distance_given_height_secondary(pix_pct, self.camera_dict[key][0], focal_len)
+            dist = self.find_distance_given_height_secondary(pix_pct, self.camera_dict[key][0], self.focal_len)
             return dist
 
         except Exception as e:
@@ -188,27 +177,27 @@ class Secondary(Solution):
 
 class Tertiary(Solution):
 
-    def __init__(self, infile):
-        Solution.__init__(self, infile)
+    def __init__(self, infile, known_height):
+        Solution.__init__(self, infile, known_height)
     
     def find_distance(self):
         try:
             dimensions = self.get_object_px(self.test_image)
-            pix_pct = (dimensions[0] * self.test_factor) / dimensions[1]
+            pix_pct = dimensions[0] / dimensions[1]
             # print "pix pct", pix_pct
 
-            tags = self.get_exif(self.calibration_image)
+            tags = self.get_exif(self.test_image)
             # pprint(tags)
 
             # focal_len = float([s for s in str.split(str(tags['LensModel'])) if s.__contains__('mm')][0][0:4])
-            focal_len = float(tags['FocalLength'][0]) / float(tags['FocalLength'][1])
+            self.focal_len = float(tags['FocalLength'][0]) / float(tags['FocalLength'][1])
             #print "focal len mm", focal_len
 
             self.find_key(tags['FocalLengthIn35mmFilm'], float(tags['FocalLength'][0]) / float(tags['FocalLength'][1]))
             #print "determined key", key + "\""
 
-            dist = (focal_len * self.height_object_in_question * dimensions[1]) / (
-                (dimensions[0] * self.test_factor) * self.camera_dict[key][0])
+            dist = (self.focal_len * self.height_object_in_question * dimensions[1]) / (
+                dimensions[0] * self.camera_dict[key][0])
             return dist
 
         except Exception as e:
@@ -222,7 +211,7 @@ class Quaternary(Solution):
     
     def find_distance(self):
         try:
-            dist = self.get_exif(self.calibration_image)['SubjectDistance']  # maybe useful, determined from center of focus in digital cameras
+            dist = self.get_exif(self.test_image)['SubjectDistance']  # maybe useful, determined from center of focus in digital cameras
             return dist
         except Exception as e:
             sys.stderr.write("Quaternary Method Failed.")
@@ -239,15 +228,17 @@ class Macro:
         self.commands.append(command)
 
     def run(self):
+        ret = []
         for c in self.commands:
-            print "DIST", repr(c), c.find_distance()
+            ret.append((repr(c), c.find_distance()))
+        return ret
 
-def main(infile):
+def main(infile, known_height):
 
     # run me
-    df = Macro(Primary(infile), Secondary(infile), Tertiary(infile))
-    df.run()
-    sys.exit(0)
+    df = Macro(Primary(infile, known_height), Secondary(infile, known_height), Tertiary(infile, known_height))
+    results = df.run()
+    pprint(results)
 
 if __name__ == '__main__':
 
@@ -255,4 +246,8 @@ if __name__ == '__main__':
 
     directory = os.path.dirname(os.path.realpath(__file__))
     infile = directory + '\\Input\\IMG_0943.jpg'
-    main(infile)
+    main(infile, 1.82 * 0.85)
+    main(infile, 1.82)
+    main(infile, 1.82 * 1.15)
+
+    sys.exit(0)
