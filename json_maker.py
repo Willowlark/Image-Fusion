@@ -7,5 +7,9 @@ object_in_question = 0.115
 
 directory = os.path.dirname(os.path.realpath(__file__))
 
-with open(directory + '/result.json', 'w') as fp:
+with open(directory + '\\json\\cameras.json', 'w') as fp:
     json.dump(camera_dict, fp)
+
+with open(directory + '\\json\\cameras.json', 'r') as fp:
+    json_data = json.load(fp)
+    print json_data
