@@ -13,7 +13,7 @@ import json
 class Solution:
 
     def __init__(self, infile, known_height):
-        self.test_factor = 0.1  # set to manually control the ratio of the case from which focal length is determined to the known test case
+        self.test_factor = 0.1  # TODO remove this when done
         self.test_image = infile
         self.height_object_in_question = known_height
         self.key = None
