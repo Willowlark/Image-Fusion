@@ -9,23 +9,21 @@ import sys
 import warnings
 import json
 
-# run me
-warnings.filterwarnings('ignore')
 
 class Solution:
 
     def __init__(self, infile):
         self.test_factor = 0.10  # set to manually control the ratio of the case from which focal length is determined to the known test case
-
-        # some useful sensor height to crop factor relations
-        # camera_dict = {'1/3.2': (3.42, 7.6), '1/3.0': (3.6, 7.2), '1/2.6': (4.1, 6.3), '1/2.5' : (4.29, 6.0), '1/2.3': (4.55, 5.6), '1/1.8': (5.32, 4.8), '1/1.7': (5.64, 4.7), '2/3': (6.6, 3.9), '16mm': (7.49, 3.4), '1': (8.80, 2.7), '4/3': (13, 2.0), 'Imax': (52.63, 0.49)} # some useful sensor height to crop factor relations
+        self.test_image = infile
         self.key = None
 
-        self.object_in_question = 0.115  # Real vertical height of object being examined in meters
-
         directory = os.path.dirname(os.path.realpath(__file__))
-        self.calibration_image = directory + '\\Input\\IMG_0942.jpg'
-        self.test_image = infile
+
+        with open(directory + '\\json\\calib_info.json', 'r') as fp:
+            json_data = json.load(fp)
+            self.height_object_in_question = json_data["height_object_in_question"]
+            self.dist_object_in_question = json_data["dist_object_in_question"]
+            self.calibration_image = json_data["calibration_image"]
 
         with open(directory + '\\json\\cameras.json', 'r') as data_file:
             data = json.load(data_file)
@@ -75,10 +73,10 @@ class Solution:
         `height_pct' height of object as floating value in vertical pixels occupied
         `sensor_height_mm` the known height of the sensor in millimeters
         `focal_len_mm the known focal len of the sensor in millimeters
-        `return` the determined distance of the object from the camera in units of object_in_question
+        `return` the determined distance of the object from the camera in units of height_object_in_question
         """
         theta = math.atan((height_pct * sensor_height_mm) / focal_len_mm)  # if height of object is X pct of the pixels, then it must also be X pct of the sensor height in mm
-        goal_dist = self.object_in_question / math.tan(theta)
+        goal_dist = self.height_object_in_question / math.tan(theta)
         return goal_dist
 
     def find_distance_given_height_primary(self, obj_height_px, focal_len_px):
@@ -86,10 +84,10 @@ class Solution:
         This method takes the height of the object in pixels and the determined focal_length in pixels to find the distance to that object
 
         `obj_height_px` the height of the object in pixels
-        `return` the determined distance of the object from the camera in units of object_in_question
+        `return` the determined distance of the object from the camera in units of height_object_in_question
         """
         test_angle = math.atan(obj_height_px / focal_len_px)
-        goal_dist = self.object_in_question / math.tan(test_angle)
+        goal_dist = self.height_object_in_question / math.tan(test_angle)
         return goal_dist
 
     def find_key(self, eq_focal_len, act_focal_len):
@@ -129,7 +127,7 @@ class Solution:
         `control_object_height_px` the fixed, measured height in pixels of teh object's visage in the digital photo
         `return` focal length in pixels
         """
-        a = self.object_in_question  # height in meters
+        a = self.height_object_in_question  # height in meters
         d = control_object_distance  # in meters
 
         control_angle = math.atan(a / d)  # achieve theta for this controlled case
@@ -150,7 +148,7 @@ class Primary(Solution):
             pix_pct = (dimensions[0] * self.test_factor) / dimensions[1]
             # print "pix pct", pix_pct
 
-            focal_len = self.calibrate_focal_len(1, self.get_object_px(self.calibration_image)[0])
+            focal_len = self.calibrate_focal_len(self.dist_object_in_question, self.get_object_px(self.calibration_image)[0])
             # print "focal len px", focal_len
 
             dist = self.find_distance_given_height_primary((dimensions[0] * self.test_factor), focal_len)
@@ -209,7 +207,7 @@ class Tertiary(Solution):
             self.find_key(tags['FocalLengthIn35mmFilm'], float(tags['FocalLength'][0]) / float(tags['FocalLength'][1]))
             #print "determined key", key + "\""
 
-            dist = (focal_len * self.object_in_question * dimensions[1]) / (
+            dist = (focal_len * self.height_object_in_question * dimensions[1]) / (
                 (dimensions[0] * self.test_factor) * self.camera_dict[key][0])
             return dist
 
@@ -252,6 +250,9 @@ def main(infile):
     sys.exit(0)
 
 if __name__ == '__main__':
+
+    warnings.filterwarnings('ignore')
+
     directory = os.path.dirname(os.path.realpath(__file__))
     infile = directory + '\\Input\\IMG_0943.jpg'
     main(infile)
