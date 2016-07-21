@@ -246,8 +246,8 @@ if __name__ == '__main__':
 
     directory = os.path.dirname(os.path.realpath(__file__))
     infile = directory + '\\Input\\IMG_0943.jpg'
-    main(infile, 1.82 * 0.85)
+    #main(infile, 1.82 * 0.85)
     main(infile, 1.82)
-    main(infile, 1.82 * 1.15)
+    #main(infile, 1.82 * 1.15)
 
     sys.exit(0)
