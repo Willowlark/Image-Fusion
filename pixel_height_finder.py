@@ -29,7 +29,7 @@ def find_height(infile):
     colors_dict = color_separator(infile)
     # pprint(colors_dict)
     out = colors_dict[red]
-    # out.show()
+    out.show()
 
     pixels = list(out.getdata())
     width, height = infile.size
@@ -39,7 +39,8 @@ def find_height(infile):
     top = pixels.index(first)
     print "first @", top
 
-    last = next(row for row in pixels[::-1] if row.__contains__(red))
+    pixels.reverse()
+    last = next(row for row in pixels if row.__contains__(red))
     bot = pixels.index(last)
     print "last @", bot
 
@@ -53,8 +54,8 @@ def pixel_write(infile, temp):
     # box = (126, 132, 158, 133)  # (126, 132, 161, 200)
     pixels = im.load()  # create the pixel map
 
-    for i in range(127, 159+1):
-        for j in range(132, 133+1):
+    for i in range(127, 161):
+        for j in range(132, 134):
             pixels[i, j] = red
 
     # for i in range(img.size[0]):  # for every pixel:
@@ -65,10 +66,10 @@ def pixel_write(infile, temp):
 
 if __name__ == '__main__':
     directory = os.path.dirname(os.path.realpath(__file__))
-    infile = directory + '\\Input\\IMG_0942.jpg'
-    temp = directory + '\\Input\\temp.jpg'
-    out = pixel_write(infile, temp)
+    infile = directory + '/Input/IMG_0942.jpg'
+    temp = directory + '/Input/temp.jpg'
+    out = pixel_write(infile, temp).rotate(-90)
     out.show()
 
-    infile = directory + '\\Input\\OdEct.png'
+    infile = directory + '/Input/OdEct.png'
     print find_height(out)
