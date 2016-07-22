@@ -2,7 +2,11 @@ import sys
 import json
 import os
 import math
-from PIL import Image
+from pixel_height_finder import pixel_height_finder
+
+# ARGS:
+# "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0942.jpg" 0.115 1.0
+#
 
 # JSON of following format
 # {
@@ -20,27 +24,24 @@ def parse_args():
     height_object_in_question = sys.argv[2]
     dist_object_in_question = sys.argv[3]
 
-def get_object_px(path):
+def find_object_px(path, color):
     """
     This method should will be finished to find the height of the found object in pixels
     to be used essential to every distance method
 
     `path` the path to the image file being investigated
+    `color` the color that you sih to look for in the file of path
     `return` (obj_height, img_height) the height of teh object in px, and the height of the image in pixels
     """
-    im = Image.open(path)
-    img_width, img_height = im.size
+    phf = pixel_height_finder(color)
 
-    # TODO insert procedure to determine what number of vertical pixels that is the object
-    # these values were calculated by hand and visual estimation, they wil be done with a sub-procedure upon completion
-    box = (126, 132, 158, 133)  # (126, 132, 161, 200)
-    region = im.crop(box)
-    obj_height_px = region.size[0]
+    # TODO it is here the procedure of image merging belongs
+    out = phf.pixel_write(path).rotate(-90)
+    out.show()
 
-    # region.show()
-    # print "img dimensions", img_width, "x", img_height, "px"
-
-    return obj_height_px, img_height
+    res = phf.find_height(out)
+    print "obj height px", res[0], "\nvert px pct", res[1]
+    return res
 
 def calibrate_focal_len(control_object_distance, control_object_height, control_object_height_px):
     """
@@ -54,33 +55,25 @@ def calibrate_focal_len(control_object_distance, control_object_height, control_
     """
     control_angle = math.atan(float(control_object_height) / float(control_object_distance))  # achieve theta for this controlled case
     focal_len_px = control_object_height_px / math.tan(control_angle)
+    print "focal len found,", focal_len_px, "px"
     return focal_len_px
 
-
 # running methods
-parse_args()
+parse_args()    # get args from command line, see example args at top of file
 
-object_height_px = get_object_px(calibration_image)[0]
+colour = (249, 24, 0) # red, the color chosen to be examine d for
+object_height_px = find_object_px(calibration_image, colour)[0]
 
-focal_len = calibrate_focal_len(dist_object_in_question, height_object_in_question, object_height_px)
+focal_len = calibrate_focal_len(dist_object_in_question, height_object_in_question, object_height_px)   # find focal len px
 
 directory = os.path.dirname(os.path.realpath(__file__))
-calib_file = os.path.join(directory, 'json', 'calib_info.json')
+calib_file = os.path.join(directory, 'json', 'calib_info.json') # destination of calibration storage
 
-with open(calib_file, 'w') as fp:
+with open(calib_file, 'w') as fp:   # write all pre-conditions and focal len post-condition to calib_file
     json.dump({"height_object_in_question" : float(height_object_in_question),
                 "dist_object_in_question" : float(dist_object_in_question),
                 "calibration_image" : calibration_image,
                "focal_len" : float(focal_len)}, fp, indent=4)
-
-
-with open(calib_file, 'r') as fp:
-    json_data = json.load(fp)
-    im = Image.open(json_data["calibration_image"])
-    print "obj height", json_data["height_object_in_question"]
-    print "obj distance", json_data["dist_object_in_question"]
-    print "focal len", json_data["focal_len"]
-    # im.show()
 
 print "calibration finished", calib_file
 
