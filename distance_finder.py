@@ -13,7 +13,7 @@ import json
 class Solution:
 
     def __init__(self, infile, known_height):
-        self.test_factor = 0.1  # TODO remove this when done
+        self.test_factor = 1.0  # TODO remove this when done
         self.test_image = infile
         self.height_object_in_question = known_height
         self.key = None
@@ -21,7 +21,7 @@ class Solution:
 
         directory = os.path.dirname(os.path.realpath(__file__))
 
-        with open(directory + '\\json\\cameras.json', 'r') as data_file:
+        with open(os.path.join(directory, 'json', 'cameras.json'), 'r') as data_file:
             data = json.load(data_file)
             self.camera_dict = data
 
@@ -123,7 +123,7 @@ class Primary(Solution):
     def __init__(self, infile, known_height):
         Solution.__init__(self, infile, known_height)
 
-        with open(directory + '\\json\\calib_info.json', 'r') as fp:
+        with open(os.path.join(directory, 'json', 'calib_info.json'), 'r') as fp:
             json_data = json.load(fp)
             try:
                 self.focal_len = json_data["focal_len"]
@@ -245,7 +245,7 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore')
 
     directory = os.path.dirname(os.path.realpath(__file__))
-    infile = directory + '\\Input\\IMG_0943.jpg'
+    infile = os.path.join(directory, 'Input', 'IMG_0943.jpg')
     #main(infile, 1.82 * 0.85)
     main(infile, 1.82)
     #main(infile, 1.82 * 1.15)

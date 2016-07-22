@@ -7,7 +7,7 @@ import numpy
 red = (249, 24, 0)
 
 directory = os.path.dirname(os.path.realpath(__file__))
-infile = directory + '\\Input\\OdEct.png'
+infile = os.path.join(directory, 'Input', 'OdEct.png')
 
 def color_separator(im):
     if im.getpalette():
@@ -66,10 +66,9 @@ def pixel_write(infile, temp):
 
 if __name__ == '__main__':
     directory = os.path.dirname(os.path.realpath(__file__))
-    infile = directory + '/Input/IMG_0942.jpg'
-    temp = directory + '/Input/temp.jpg'
+    infile = os.path.join(directory, 'Input', 'IMG_0942.jpg')
+    temp = os.path.join(directory, 'Input', 'temp.jpg')
+
     out = pixel_write(infile, temp).rotate(-90)
     out.show()
-
-    infile = directory + '/Input/OdEct.png'
     print find_height(out)

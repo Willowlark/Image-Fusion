@@ -9,6 +9,7 @@ from PIL import Image
 #   "height_object_in_question" : 0.115,
 #   "dist_object_in_question" : 1.0,
 #   "calibration_image" : "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0942.jpg"
+#   "focal_len": 278.2608695652174,
 # }
 
 def parse_args():
@@ -63,14 +64,17 @@ object_height_px = get_object_px(calibration_image)[0]
 
 focal_len = calibrate_focal_len(dist_object_in_question, height_object_in_question, object_height_px)
 
-with open(os.path.dirname(os.path.realpath(__file__)) + '\\json\\calib_info.json', 'w') as fp:
+directory = os.path.dirname(os.path.realpath(__file__))
+calib_file = os.path.join(directory, 'json', 'calib_info.json')
+
+with open(calib_file, 'w') as fp:
     json.dump({"height_object_in_question" : float(height_object_in_question),
                 "dist_object_in_question" : float(dist_object_in_question),
                 "calibration_image" : calibration_image,
                "focal_len" : float(focal_len)}, fp, indent=4)
 
 
-with open(os.path.dirname(os.path.realpath(__file__)) + '\\json\\calib_info.json', 'r') as fp:
+with open(calib_file, 'r') as fp:
     json_data = json.load(fp)
     im = Image.open(json_data["calibration_image"])
     print "obj height", json_data["height_object_in_question"]
@@ -78,7 +82,7 @@ with open(os.path.dirname(os.path.realpath(__file__)) + '\\json\\calib_info.json
     print "focal len", json_data["focal_len"]
     # im.show()
 
-print "finished"
+print "calibration finished", calib_file
 
 sys.exit(0)
 
