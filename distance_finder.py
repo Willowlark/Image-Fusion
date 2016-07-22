@@ -8,7 +8,10 @@ import traceback
 import sys
 import warnings
 import json
+from pixel_height_finder import pixel_height_finder
 
+# ARGS
+# 0.115 IMG_0942.jpg
 
 class Solution:
 
@@ -36,16 +39,26 @@ class Solution:
         im = Image.open(path)
         img_width, img_height = im.size
 
-        # TODO insert procedure to determine what number of vertical pixels that is the object
-        # these values were calculated by hand and visual estimation, they wil be done with a sub-procedure upon completion
-        box = (126, 132, 158, 133)  # (126, 132, 161, 200)
-        region = im.crop(box)
-        obj_height_px = region.size[0]
+        red = (249, 24, 0)
+        phf = pixel_height_finder(red)
 
+        # TODO it is here the procedure of image merging belongs
+        out = phf.pixel_write(path).rotate(-90)
+        out.show()
+
+        res = phf.find_height(out)
+        print "obj height px", res[0], "\nvert px pct", res[1]
+        return (res[0] * self.test_factor, img_height)
+
+        # these values were calculated by hand and visual estimation, they wil be done with a sub-procedure upon completion
+        # box = (126, 132, 158, 133)  # (126, 132, 161, 200)
+        # region = im.crop(box)
+        # obj_height_px = region.size[0]
+        #
         # region.show()
         # print "img dimensions", img_width, "x", img_height, "px"
-
-        return obj_height_px * self.test_factor, img_height
+        #
+        # return obj_height_px * self.test_factor, img_height
 
     def get_exif(self, path):
         """
@@ -116,6 +129,7 @@ class Solution:
         return focal_len_px
 
     def find_distance(self):
+        # inherited method to be used in the specs of each subclass
         pass
 
 class Primary(Solution):
@@ -206,8 +220,8 @@ class Tertiary(Solution):
 
 class Quaternary(Solution):
 
-    def __init__(self, infile):
-        Solution.__init__(self, infile)
+    def __init__(self, infile, known_height):
+        Solution.__init__(self, infile, known_height)
     
     def find_distance(self):
         try:
@@ -230,7 +244,7 @@ class Macro:
     def run(self):
         ret = []
         for c in self.commands:
-            ret.append((repr(c), c.find_distance()))
+            ret.append((str(c.__class__.__name__), c.test_image, c.find_distance()))
         return ret
 
 def main(infile, known_height):
@@ -245,9 +259,9 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore')
 
     directory = os.path.dirname(os.path.realpath(__file__))
-    infile = os.path.join(directory, 'Input', 'IMG_0943.jpg')
+    infile = os.path.join(directory, 'Input', str(sys.argv[2]))
     #main(infile, 1.82 * 0.85)
-    main(infile, 1.82)
+    main(infile, float(sys.argv[1]))    # argv[1]: 1.82 (in meters)
     #main(infile, 1.82 * 1.15)
 
     sys.exit(0)

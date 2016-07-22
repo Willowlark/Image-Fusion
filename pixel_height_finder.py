@@ -29,7 +29,7 @@ class pixel_height_finder():
         colors_dict = self.color_separator(infile)
         # pprint(colors_dict)
         out = colors_dict[self.color]
-        out.show()
+        # out.show()
 
         pixels = list(out.getdata())
         width, height = infile.size

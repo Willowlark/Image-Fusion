@@ -12,7 +12,7 @@ from pixel_height_finder import pixel_height_finder
 # {
 #   "height_object_in_question" : 0.115,
 #   "dist_object_in_question" : 1.0,
-#   "calibration_image" : "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0942.jpg"
+#   "calibration_image" : "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_0942.jpg"
 #   "focal_len": 278.2608695652174,
 # }
 
