@@ -10,13 +10,24 @@ import warnings
 import json
 from pixel_height_finder import pixel_height_finder
 
-# ARGS
+# EXAMPLE ARGS
 # 0.115 IMG_0942.jpg
 
 class Solution:
+    """
+    This class represents one solution given a single case of image distance finding.
+    Given the parametrized vargs, index 1: image to be examined, and index 2: the known height in meters of highlighted object,
+    The solution's constructor and find distance command will return the distance of the object highlighted in the image
+    Four variations of this task exist, The primary, Secondary, Tertiary, and Quaternary.
+    Each works based on the capability of the pre-conditioned machine (Primary), or as fail-safe, the exif tags of the test image (Secondary, Tertiary, and Quaternary).
+    The Primary reads in from the calib_info file, the calibrated info used to find the focal length and the focal length determined,
+    then using trigonometric principals of similar angles, the distance of the object, whose height is known, is found.
+    The Secondary, and Tertiary methods use the exif tags to find the focal length of the lens in the camera that was used, and apply that focal length to the trigonometry.
+    The final method, investigates the tags for a special 'subject distance' tag that assumes the accurate region of focus and returns that distance fom the camera
+    """
 
     def __init__(self, infile, known_height):
-        self.test_factor = 1.0  # TODO remove this when done
+        self.test_factor = 0.01 # TODO remove this when done
         self.test_image = infile
         self.height_object_in_question = known_height
         self.key = None
@@ -42,7 +53,7 @@ class Solution:
         red = (249, 24, 0)
         phf = pixel_height_finder(red)
 
-        # TODO it is here the procedure of image merging belongs
+        # TODO it is here the procedure of image merging belongs, This is temp solution to make visible the intentional difference
         out = phf.pixel_write(path).rotate(-90)
         out.show()
 
@@ -74,19 +85,6 @@ class Solution:
             decoded = TAGS.get(tag, tag)
             ret[decoded] = value
         return ret
-
-    def find_distance_given_height_secondary(self, height_pct, sensor_height_mm, focal_len_mm):
-        """
-        This method takes the percent of the image's vertical pixels that are occupied by object being examined, the known height of the sensor in mm, and the known focal length to determine the distance of the object from the aperture
-
-        `height_pct' height of object as floating value in vertical pixels occupied
-        `sensor_height_mm` the known height of the sensor in millimeters
-        `focal_len_mm the known focal len of the sensor in millimeters
-        `return` the determined distance of the object from the camera in units of height_object_in_question
-        """
-        theta = math.atan((height_pct * sensor_height_mm) / focal_len_mm)  # if height of object is X pct of the pixels, then it must also be X pct of the sensor height in mm
-        goal_dist = float(self.height_object_in_question) / math.tan(theta)
-        return goal_dist
 
     def find_distance_given_height_primary(self, obj_height_px, focal_len_px):
         """
@@ -129,10 +127,17 @@ class Solution:
         return focal_len_px
 
     def find_distance(self):
-        # inherited method to be used in the specs of each subclass
+        """
+        inherited method to be used by each subclass in a particular way
+        :return: distance, in meters of object from aperture, if solution available, else None
+        """
         pass
 
 class Primary(Solution):
+    """
+    The described primary method of finding object distance
+    Requires config file (calib_info) to be established for accurate functionality
+    """
 
     def __init__(self, infile, known_height):
         Solution.__init__(self, infile, known_height)
@@ -151,9 +156,6 @@ class Primary(Solution):
             pix_pct = dimensions[0] / dimensions[1]
             # print "pix pct", pix_pct
 
-            # focal_len = self.calibrate_focal_len(self.dist_object_in_question, self.get_object_px(self.calibration_image)[0])
-            # # print "focal len px", focal_len
-
             dist = self.find_distance_given_height_primary(dimensions[0], self.focal_len)
             return dist
 
@@ -162,7 +164,10 @@ class Primary(Solution):
             traceback.print_exc()
 
 class Secondary(Solution):
-
+    """
+    The described secondary method of finding object distance
+    Requires only proper file format, with exif tags, to run appropriately
+    """
     def __init__(self, infile, known_height):
         Solution.__init__(self, infile, known_height)
     
@@ -182,7 +187,7 @@ class Secondary(Solution):
             self.find_key(tags['FocalLengthIn35mmFilm'], float(tags['FocalLength'][0]) / float(tags['FocalLength'][1]))
             # print "determined key", key + "\""
 
-            dist = self.find_distance_given_height_secondary(pix_pct, self.camera_dict[key][0], self.focal_len)
+            dist = self.find_distance_given_height_primary(pix_pct * self.camera_dict[key][0], self.focal_len)
             return dist
 
         except Exception as e:
@@ -190,6 +195,10 @@ class Secondary(Solution):
             traceback.print_exc()
 
 class Tertiary(Solution):
+    """
+    The penultimate method of finding object distance
+    Requires only proper file format, with exif tags, to run appropriately
+    """
 
     def __init__(self, infile, known_height):
         Solution.__init__(self, infile, known_height)
@@ -219,6 +228,10 @@ class Tertiary(Solution):
             traceback.print_exc()
 
 class Quaternary(Solution):
+    """
+    The last method of finding object distance, characterized by unreliability
+    Requires proper file format, with exif tags, as well as exif tag 'SubjectDistance' and assumes the object is in field of focus
+    """
 
     def __init__(self, infile, known_height):
         Solution.__init__(self, infile, known_height)
@@ -227,6 +240,7 @@ class Quaternary(Solution):
         try:
             dist = self.get_exif(self.test_image)['SubjectDistance']  # maybe useful, determined from center of focus in digital cameras
             return dist
+
         except Exception as e:
             sys.stderr.write("Quaternary Method Failed.")
             traceback.print_exc()
@@ -244,7 +258,7 @@ class Macro:
     def run(self):
         ret = []
         for c in self.commands:
-            ret.append((str(c.__class__.__name__), c.test_image, c.find_distance()))
+            ret.append((str(c.__class__.__name__), os.path.split(c.test_image)[1], c.find_distance()))
         return ret
 
 def main(infile, known_height):
