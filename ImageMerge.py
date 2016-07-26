@@ -1,4 +1,5 @@
 from PIL import Image
+import PixelProcess
 
 debug = 0
 
@@ -25,10 +26,8 @@ class Merger:
         self.autoSave = 0
 
         self.outfile = outfile
-        self.outdata = None
 
-        self.checker = PixelChecker()
-        self.actor = PixelActor()
+        self.processor = PixelProcess.PixelRemote()
         self.mergedFiles = []
 
     def setup(self, file):
@@ -42,7 +41,7 @@ class Merger:
         `file`: A path to an image to initialize the Merge with.
         """
         self.outimage = Image.open(file)
-        self.outdata = self.outimage.load()
+        self.processor.outdata = self.outimage.load()
         if self.autoSave: self.save()
         self.initialized = 1
 
@@ -69,8 +68,8 @@ class Merger:
 
             self.mergedFiles.append(image)
             if debug: self.printDiffSame(changed)
+            if debug: self.show()
 
-        if debug: self.show()
         if self.autoSave: self.save()
         
     def testMerge(self, *images):
@@ -117,7 +116,7 @@ class Merger:
         # If the back up was made, restore the status to before the last merge. Else, reset the object.
         if orig is not None:
             self.outimage = orig
-            self.outdata = self.outimage.load()
+            self.processor.outdata = self.outimage.load()
         else:
             self = Merger(self.outfile)
 
@@ -150,16 +149,13 @@ class Merger:
         `return`: The number of modified pixels.
         """
         compareimage = Image.open(img)
-        comparedata = compareimage.load()
+        self.processor.comparedata = compareimage.load()
 
         counter = 0
-        for x in range(self.outimage.size[0]):
-            for y in range(self.outimage.size[1]):
-                currpixel = self.outdata[x, y]
-                comparepixel = comparedata[x, y]
-                if self.checker.check(currpixel, comparepixel):
-                    self.outdata[x, y] = self.actor.act(currpixel, comparepixel)
-                    counter += 1
+        print self.outimage.size
+        for y in range(self.outimage.size[1]):
+            for x in range(self.outimage.size[0]):
+                counter += self.processor.run(x, y, x, y)
         return counter
 
     def convert(self, *images):
@@ -226,141 +222,41 @@ class Merger:
             360000-counter, repr(round(((360000-counter)/360000.)*100,2)) + '%'+ '\n'
 
 
-class PixelChecker:
-
-    def __init__(self):
-        """
-        `Author`: Bill Clark
-
-        This class contains methods used to compare pixels. A Merger needs a pixel checker to function.
-        The check method is the only method called automatically. All inputs should be pixel tuples, which
-        are in the format of (R,G,B,Alpha).
-        This class has the ability to overwrite the check method with alternate checks. Check is the only
-        method with required attributes. If an alternate check method is called directly, without parameters,
-        the check method is set to use that method. A user should only call those methods without parameters.
-        The reason they have those parameters is because they are given them once they've overwritten check.
-        The difference number is used in comparisons, a bar of how different colors have to be to be acted on.
-
-        """
-        self.diffnum = 120
-
-    def check(self, p1, p2):
-        """
-        `Author`: Bill Clark
-
-        Checks a pair of pixels. This method is overwritten by other checkers, which change the
-        actions it preforms to compare.
-
-        `p1`: First pixel to compare.
-
-        `p2`: Second pixel to compare.
-
-        `return`: Returns a boolean value indicating if the pixels should be acted on.
-        """
-        self.check = self.colorDiffGreater
-        return self.check()
-
-    def colorDiffGreater(self, p1=None, p2=None):
-        """
-        `Author`: Bill Clark
-
-        Checks a pair of pixels. R, G, B are compared and if any of them have a difference greater than
-        the difference number, true is returned. If this method is called with no parameters, check is
-        overwritten with this method.
-
-        `p1`: First pixel to compare.
-
-        `p2`: Second pixel to compare.
-
-        `return`: Returns a boolean value indicating if the pixels should be acted on.
-        """
-        if p1 and p2:
-            return abs(p1[0] - p2[0]) > self.diffnum \
-                   or abs(p1[1] - p2[1]) > self.diffnum \
-                   or abs(p1[2] - p2[2]) > self.diffnum
-        else:
-            self.check = self.colorDiffGreater
-
-
-class PixelActor:
-    def __init__(self):
-        """
-        `Author`: Bill Clark
-
-        This class contains actions that will be performed on any pixel pair that were checked true by the
-        pixel checker. This class is required by Merger.
-        The act method is the only method called automatically. All inputs should be pixel tuples, which
-        are in the format of (R,G,B,Alpha).
-        This class has the ability to overwrite the check method with alternate checks. Act is the only
-        method with required attributes. If an alternate act method is called directly, without parameters,
-        the act method is set to use that method. A user should only call those methods without parameters.
-        The reason they have those parameters is because they are given them once they've overwritten act.
-        """
-        pass
-
-    def act(self, p1, p2):
-        """
-        `Author`: Bill Clark
-
-        Acts on a pair of pixels. This method is overwritten by other actors. If it has not been overwritten
-        when it was called, redHighlight is defaulted to.
-
-        `p1`: First pixel to compare.
-
-        `p2`: Second pixel to compare.
-
-        `return`: What the output data's pixel should be assigned to.
-        """
-        self.act = self.redHighlight()
-        return self.act()
-
-    def redHighlight(self, p1=None, p2=None):
-        """
-        `Author`: Bill Clark
-
-        Acts on a pair of pixels. The output data is set to true red.
-
-        `p1`: First pixel to compare.
-
-        `p2`: Second pixel to compare.
-
-        `return`: What the output data's pixel should be assigned to.
-        """
-        if p1 and p2:
-            return (255, 0, 0, 255)
-        else:
-            self.act = self.redHighlight
-
-    def takeNew(self, p1=None, p2=None):
-        """
-        `Author`: Bill Clark
-
-        Acts on a pair of pixels. The output data is set to the compared image's pixel.
-
-        `p1`: First pixel to compare.
-
-        `p2`: Second pixel to compare.
-
-        `return`: What the output data's pixel should be assigned to.
-        """
-        if p1 and p2:
-            return p2
-        else:
-            self.act = self.takeNew
-
-
 if __name__ == "__main__":
     debug = 0
     inputs = ['Input/One Visual.jpg', 'Input/One Infrared.jpg']
     m = Merger('Output/ImF.png')
 
-    m.actor.takeNew()
-    m.testMerge(inputs[0])
+    m.processor = PixelProcess.ExtractPixelRemote()
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+    m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+
+    m.merge(inputs[0])
     m.merge(inputs[1])
+    print "Number of pixels recorded.", len(m.processor.pixels)
 
-    m.actor.redHighlight()
+    post = m.processor.getGroupedPixels()
 
-    m.checker.diffnum = 30
+    print post[0]
+
+    # for group in post:  # Post the groups to the outimage.
+    #     for p in group.pixels:
+    #         imdata[p[0], p[1]] = m.processor.pixels[p]
+
+    #Output the first group to it's own image.
+    im = Image.new("RGBA", (post[0].width, post[0].height))
+    imdata = im.load()
+
+    for p in post[0].pixels:
+        imdata[p[0]-post[0].x[0], p[1]-post[0].y[0]] = m.processor.pixels[p]
+
+    im.show()
+    im.save('Output/Only Pixels.png')
+
+
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+
+    m.processor.checkcmd.diffnum = 50
     m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
 
     m.save()
