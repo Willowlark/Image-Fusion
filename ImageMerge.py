@@ -235,24 +235,28 @@ if __name__ == "__main__":
     m.merge(inputs[1])
     print "Number of pixels recorded.", len(m.processor.pixels)
 
-    im = Image.new("RGBA", m.outimage.size)
-    imdata = im.load()
-
     post = m.processor.getGroupedPixels()
 
-    # print len(post)
+    print post[0]
 
-    for group in post:  # Post the groups to the outimage.
-        for p in group.pixels:
-            imdata[p[0], p[1]] = m.processor.pixels[p]
+    # for group in post:  # Post the groups to the outimage.
+    #     for p in group.pixels:
+    #         imdata[p[0], p[1]] = m.processor.pixels[p]
+
+    #Output the first group to it's own image.
+    im = Image.new("RGBA", (post[0].width, post[0].height))
+    imdata = im.load()
+
+    for p in post[0].pixels:
+        imdata[p[0]-post[0].x[0], p[1]-post[0].y[0]] = m.processor.pixels[p]
 
     im.show()
     im.save('Output/Only Pixels.png')
 
 
-    m.processor.setActorCommand(PixelProcess.TakeSecondCommand())
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
 
-    m.processor.checkcmd.diffnum = 30
+    m.processor.checkcmd.diffnum = 50
     m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
 
     m.save()

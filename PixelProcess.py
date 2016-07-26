@@ -98,7 +98,11 @@ class ExtractPixelRemote(PixelRemote):
             # groups.append(subprocess)
         return groups
 
+
 class PixelGroup(object):
+
+    def __str__(self):
+        return repr(self.x)+' '+repr(self.y)+' '+repr(self.height)+' '+repr(self.width)+' '+repr(self.ratio)+'%'
 
     def __init__(self, groups):
         self.pixels = groups
