@@ -152,8 +152,9 @@ class Merger:
         self.processor.comparedata = compareimage.load()
 
         counter = 0
-        for x in range(self.outimage.size[0]):
-            for y in range(self.outimage.size[1]):
+        print self.outimage.size
+        for y in range(self.outimage.size[1]):
+            for x in range(self.outimage.size[0]):
                 counter += self.processor.run(x, y, x, y)
         return counter
 
@@ -225,32 +226,33 @@ if __name__ == "__main__":
     debug = 0
     inputs = ['Input/One Visual.jpg', 'Input/One Infrared.jpg']
     m = Merger('Output/ImF.png')
-    m.processor = PixelProcess.ExtractPixelRemote()
 
+    m.processor = PixelProcess.ExtractPixelRemote()
     m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
     m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+
     m.merge(inputs[0])
     m.merge(inputs[1])
-    print m.processor.pixels
+    print "Number of pixels recorded.", len(m.processor.pixels)
 
     im = Image.new("RGBA", m.outimage.size)
     imdata = im.load()
-    for x in range(0, im.size[0]):
-        for y in range(0, im.size[1]):
-            if (x,y) in m.processor.pixels:
-                pix = list(m.processor.pixels[x,y])
-                pix.append(255)
-                print pix
-                imdata[x, y] = tuple(pix)
-            else:
-                imdata[x,y] = (0, 0, 0, 0)
+
+    post = m.processor.getGroupedPixels()
+
+    # print len(post)
+
+    for group in post:  # Post the groups to the outimage.
+        for p in group.pixels:
+            imdata[p[0], p[1]] = m.processor.pixels[p]
+
     im.show()
     im.save('Output/Only Pixels.png')
 
 
-    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+    m.processor.setActorCommand(PixelProcess.TakeSecondCommand())
 
     m.processor.checkcmd.diffnum = 30
-    m.mergeAs('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+    m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
 
     m.save()
