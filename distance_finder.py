@@ -13,7 +13,7 @@ import ImageMerge
 import PixelProcess
 
 # EXAMPLE ARGS
-# 0.115 IMG_0942.jpg
+# 0.124 IMG_0986.jpg
 
 class Solution:
     """
@@ -65,7 +65,7 @@ class Solution:
 
     # TODO refactor this method into some useful format
     def deploy_image_merge(self):
-        inputs = ['Input/IMG_0971.jpg', 'Input/IMG_0972.jpg']
+        inputs = ['Input/IMG_0984.jpg', 'Input/IMG_0986.jpg']
         m = ImageMerge.Merger('Output/ImF.png')
 
         m.processor = PixelProcess.ExtractPixelRemote()
@@ -78,9 +78,31 @@ class Solution:
 
         post = m.processor.getGroupedPixels()
 
-        print post[0], "W", post[0].width, "H", post[0].height
+        print post[0]
         ratio = post[0].height / Image.open(inputs[0]).height
+        print Image.open(inputs[0]).height
         print "RATIO", ratio
+
+        im = Image.new("RGBA", (post[0].width, post[0].height))
+        imdata = im.load()
+
+        for p in post[0].pixels:
+            imdata[p[0] - post[0].x[0], p[1] - post[0].y[0]] = m.processor.pixels[p]
+
+        im.show()
+        im.save('Output/Only Pixels.png')
+
+        m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+
+        m.processor.checkcmd.diffnum = 50
+
+        i = Image.new('RGB', Image.open(inputs[0]).size)
+        i.save('Output/One Fused Provided.jpg')
+
+        m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+
+        m.save()
+
         return (post[0].height, ratio)
 
     def get_exif(self, path):

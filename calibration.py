@@ -9,15 +9,15 @@ import PixelProcess
 import ImageMerge
 
 # ARGS:
-# "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0971.jpg" 0.291 1.0
+# "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_0985.jpg" 0.124 0.5
 #
 
 # JSON of following format
 # {
-#   "height_object_in_question" : 0.115,
-#   "dist_object_in_question" : 1.0,
-#   "calibration_image" : "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_0942.jpg"
-#   "focal_len": 278.2608695652174,
+#     "height_object_in_question": 0.124,
+#     "focal_len": 274.19354838709677,
+#     "calibration_image": "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0985.jpg",
+#     "dist_object_in_question": 0.5
 # }
 
 def parse_args():
@@ -50,7 +50,7 @@ def find_object_px(path, color):
 
 #TODO refactor this method into some useful format
 def deploy_image_merge():
-    inputs = ['Input/IMG_0971.jpg', 'Input/IMG_0972.jpg']
+    inputs = ['Input/IMG_0984.jpg', 'Input/IMG_0985.jpg']
     m = ImageMerge.Merger('Output/ImF.png')
 
     m.processor = PixelProcess.ExtractPixelRemote()
@@ -63,9 +63,31 @@ def deploy_image_merge():
 
     post = m.processor.getGroupedPixels()
 
-    print post[0], "W", post[0].width, "H", post[0].height
+    # TODO are width and height mixed up?
+    print post[0]
     ratio = post[0].height / Image.open(inputs[0]).height
     print "RATIO", ratio
+
+    im = Image.new("RGBA", (post[0].width, post[0].height))
+    imdata = im.load()
+
+    for p in post[0].pixels:
+        imdata[p[0] - post[0].x[0], p[1] - post[0].y[0]] = m.processor.pixels[p]
+
+    im.show()
+    im.save('Output/Only Pixels.png')
+
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+
+    m.processor.checkcmd.diffnum = 50
+
+    i = Image.new('RGB', Image.open(inputs[0]).size)
+    i.save('Output/One Fused Provided.jpg')
+
+    m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+
+    m.save()
+
     return (post[0].height, ratio)
 
 def calibrate_focal_len(control_object_distance, control_object_height, control_object_height_px):

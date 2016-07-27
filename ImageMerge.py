@@ -225,7 +225,7 @@ class Merger:
 
 if __name__ == "__main__":
     debug = 0
-    inputs = ['Input/IMG_0971.jpg', 'Input/IMG_0972.jpg']
+    inputs = ['Input/IMG_0984.jpg', 'Input/IMG_0986.jpg']
     m = Merger('Output/ImF.png')
 
     m.processor = PixelProcess.ExtractPixelRemote()
@@ -241,12 +241,12 @@ if __name__ == "__main__":
     print post[0], "W", post[0].width, "H", post[0].height
     print "RATIO", post[0].height / Image.open(inputs[0]).height
 
-
     # for group in post:  # Post the groups to the outimage.
     #     for p in group.pixels:
     #         imdata[p[0], p[1]] = m.processor.pixels[p]
 
     #Output the first group to it's own image.
+
     im = Image.new("RGBA", (post[0].width, post[0].height))
     imdata = im.load()
 
@@ -259,6 +259,10 @@ if __name__ == "__main__":
     m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
 
     m.processor.checkcmd.diffnum = 50
+
+    i = Image.new('RGB', Image.open(inputs[0]).size)
+    i.save('Output/One Fused Provided.jpg')
+
     m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
 
     m.save()
