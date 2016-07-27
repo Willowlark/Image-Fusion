@@ -1,11 +1,15 @@
+from __future__ import division
 import sys
 import json
 import os
 import math
 from pixel_height_finder import pixel_height_finder
+from PIL import Image
+import PixelProcess
+import ImageMerge
 
 # ARGS:
-# "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0942.jpg" 0.115 1.0
+# "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0971.jpg" 0.291 1.0
 #
 
 # JSON of following format
@@ -33,15 +37,36 @@ def find_object_px(path, color):
     `color` the color that you sih to look for in the file of path
     `return` (obj_height, img_height) the height of teh object in px, and the height of the image in pixels
     """
-    phf = pixel_height_finder(color)
 
     # TODO it is here the procedure of image merging belongs
-    out = phf.pixel_write(path).rotate(-90)
-    out.show()
+    # phf = pixel_height_finder(color)
+    # out = phf.pixel_write(path).rotate(-90)
+    # out.show()
+    # res = phf.find_height(out)
 
-    res = phf.find_height(out)
+    res = deploy_image_merge()
     print "obj height px", res[0], "\nvert px pct", res[1]
     return res
+
+#TODO refactor this method into some useful format
+def deploy_image_merge():
+    inputs = ['Input/IMG_0971.jpg', 'Input/IMG_0972.jpg']
+    m = ImageMerge.Merger('Output/ImF.png')
+
+    m.processor = PixelProcess.ExtractPixelRemote()
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+    m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+
+    m.merge(inputs[0])
+    m.merge(inputs[1])
+    print "Number of pixels recorded.", len(m.processor.pixels)
+
+    post = m.processor.getGroupedPixels()
+
+    print post[0], "W", post[0].width, "H", post[0].height
+    ratio = post[0].height / Image.open(inputs[0]).height
+    print "RATIO", ratio
+    return (post[0].height, ratio)
 
 def calibrate_focal_len(control_object_distance, control_object_height, control_object_height_px):
     """
