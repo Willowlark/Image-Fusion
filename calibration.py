@@ -48,7 +48,7 @@ def find_object_px(path, color):
 
 #TODO refactor this method into some useful format
 def deploy_image_merge():
-    inputs = ['Input/IMG_0988.jpg', 'Input/IMG_0989.jpg']
+    inputs = ['Input/IMG_base.jpg', 'Input/IMG_calib.jpg']
     m = ImageMerge.Merger('Output/ImF.png')
 
     m.processor = PixelProcess.ExtractPixelRemote()

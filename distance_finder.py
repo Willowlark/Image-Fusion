@@ -12,9 +12,7 @@ import ImageMerge
 import PixelProcess
 
 # EXAMPLE ARGS
-# 0.124 IMG_0990.jpg    apprx 2.0
-# 0.124, IMG_0991.jpg   apprx 0.5
-# 0.124, IMG_0992.jpg   apprx 1.5
+# 0.124 IMG_two.jpg
 
 class Solution:
     """
@@ -60,7 +58,7 @@ class Solution:
 
     # TODO refactor this method into some useful format
     def deploy_image_merge(self, path):
-        inputs = ['Input/IMG_0988.jpg', path]
+        inputs = ['Input/IMG_base.jpg', path]
         m = ImageMerge.Merger('Output/ImF.png')
 
         m.processor = PixelProcess.ExtractPixelRemote()

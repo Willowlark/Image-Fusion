@@ -38,11 +38,11 @@ def rotate(inpath, outpath, degree):
     return False
 
 def main():
-    imgs = ['IMG_0988.jpg', 'IMG_0989.jpg', 'IMG_0990.jpg', 'IMG_0991.jpg', 'IMG_0992.jpg']
+    imgs = ['IMG_base.jpg', 'IMG_calib.jpg', 'IMG_two.jpg', 'IMG_half.jpg', 'IMG_onehalf.jpg']
     for img in imgs:
         infile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', img)
         outfile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'temp.jpg')
-        print autorotate(infile, outfile)
+        print autorotate(infile, infile)
 
 def main2():
     h, w = Image.open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', 'IMG_0992.jpg')).size
