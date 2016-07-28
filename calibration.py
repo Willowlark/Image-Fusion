@@ -15,7 +15,7 @@ import ImageMerge
 #     "height_object_in_question": 0.124,
 #     "focal_len": 274.19354838709677,
 #     "calibration_image": "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0989.jpg",
-#     "dist_object_in_question": 0.5
+#     "dist_object_in_question": 1.0
 # }
 
 def parse_args():

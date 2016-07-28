@@ -84,13 +84,12 @@ class Solution:
         for p in post[0].pixels:
             imdata[p[0] - post[0].x[0], p[1] - post[0].y[0]] = m.processor.pixels[p]
 
-        im.show()
+        # im.show()
         im.save('Output/Only Pixels.png')
 
         m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
 
         m.processor.checkcmd.diffnum = 50
-
 
         m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
 

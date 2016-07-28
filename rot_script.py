@@ -1,5 +1,5 @@
 from PIL import Image
-import os
+import os, sys
 
 def autorotate(inpath, outpath):
 
@@ -37,9 +37,20 @@ def rotate(inpath, outpath, degree):
         return True
     return False
 
-if __name__ == '__main__':
+def main():
     imgs = ['IMG_0988.jpg', 'IMG_0989.jpg', 'IMG_0990.jpg', 'IMG_0991.jpg', 'IMG_0992.jpg']
     for img in imgs:
         infile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', img)
-        outfile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'temp.jpg' )
+        outfile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'temp.jpg')
         print autorotate(infile, outfile)
+
+def main2():
+    h, w = Image.open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', 'IMG_0992.jpg')).size
+    print w, h
+    im = Image.new('RGB', (h, w))
+    im.save(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'One Fused Provided.jpg'), quality=100)
+
+if __name__ == '__main__':
+
+    main()
+    sys.exit(0)
