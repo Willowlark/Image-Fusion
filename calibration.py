@@ -10,7 +10,6 @@ import ImageMerge
 # ARGS:
 # "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_0989.jpg" 0.124 1.0
 #
-
 # JSON of following format
 # {
 #     "height_object_in_question": 0.124,

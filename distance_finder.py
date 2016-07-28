@@ -12,8 +12,9 @@ import ImageMerge
 import PixelProcess
 
 # EXAMPLE ARGS
-# 0.124 IMG_0990.jpg
-# 0.124, IMG_0992.jpg
+# 0.124 IMG_0990.jpg    apprx 2.0
+# 0.124, IMG_0991.jpg   apprx 0.5
+# 0.124, IMG_0992.jpg   apprx 1.5
 
 class Solution:
     """
@@ -53,19 +54,13 @@ class Solution:
         img_width, img_height = im.size
 
         # TODO it is here the procedure of image merging belongs, This is temp solution to make visible the intentional difference
-        # red = (249, 24, 0)
-        # phf = pixel_height_finder(red)
-        # out = phf.pixel_write(path).rotate(-90)
-        # out.show()
-        # res = phf.find_height(out)
-
-        res = self.deploy_image_merge()
+        res = self.deploy_image_merge(path)
         print "obj height px", res[0], "\nimage height px", img_height
         return (res[0] * self.test_factor, img_height)
 
     # TODO refactor this method into some useful format
-    def deploy_image_merge(self):
-        inputs = ['Input/IMG_0988.jpg', 'Input/IMG_0990.jpg']
+    def deploy_image_merge(self, path):
+        inputs = ['Input/IMG_0988.jpg', path]
         m = ImageMerge.Merger('Output/ImF.png')
 
         m.processor = PixelProcess.ExtractPixelRemote()
