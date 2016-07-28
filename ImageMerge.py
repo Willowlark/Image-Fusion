@@ -260,9 +260,6 @@ if __name__ == "__main__":
 
     m.processor.checkcmd.diffnum = 50
 
-    i = Image.new('RGB', Image.open(inputs[0]).size)
-    i.save('Output/One Fused Provided.jpg')
-
     m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
 
     m.save()
