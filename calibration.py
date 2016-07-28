@@ -1,19 +1,23 @@
+from __future__ import division
 import sys
 import json
 import os
 import math
 from pixel_height_finder import pixel_height_finder
+from PIL import Image
+import PixelProcess
+import ImageMerge
 
 # ARGS:
-# "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0942.jpg" 0.115 1.0
+# "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_0985.jpg" 0.124 0.5
 #
 
 # JSON of following format
 # {
-#   "height_object_in_question" : 0.115,
-#   "dist_object_in_question" : 1.0,
-#   "calibration_image" : "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_0942.jpg"
-#   "focal_len": 278.2608695652174,
+#     "height_object_in_question": 0.124,
+#     "focal_len": 274.19354838709677,
+#     "calibration_image": "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0985.jpg",
+#     "dist_object_in_question": 0.5
 # }
 
 def parse_args():
@@ -33,15 +37,58 @@ def find_object_px(path, color):
     `color` the color that you sih to look for in the file of path
     `return` (obj_height, img_height) the height of teh object in px, and the height of the image in pixels
     """
-    phf = pixel_height_finder(color)
 
     # TODO it is here the procedure of image merging belongs
-    out = phf.pixel_write(path).rotate(-90)
-    out.show()
+    # phf = pixel_height_finder(color)
+    # out = phf.pixel_write(path).rotate(-90)
+    # out.show()
+    # res = phf.find_height(out)
 
-    res = phf.find_height(out)
+    res = deploy_image_merge()
     print "obj height px", res[0], "\nvert px pct", res[1]
     return res
+
+#TODO refactor this method into some useful format
+def deploy_image_merge():
+    inputs = ['Input/IMG_0984.jpg', 'Input/IMG_0985.jpg']
+    m = ImageMerge.Merger('Output/ImF.png')
+
+    m.processor = PixelProcess.ExtractPixelRemote()
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+    m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+
+    m.merge(inputs[0])
+    m.merge(inputs[1])
+    print "Number of pixels recorded.", len(m.processor.pixels)
+
+    post = m.processor.getGroupedPixels()
+
+    # TODO are width and height mixed up?
+    print post[0]
+    ratio = post[0].height / Image.open(inputs[0]).height
+    print "RATIO", ratio
+
+    im = Image.new("RGBA", (post[0].width, post[0].height))
+    imdata = im.load()
+
+    for p in post[0].pixels:
+        imdata[p[0] - post[0].x[0], p[1] - post[0].y[0]] = m.processor.pixels[p]
+
+    im.show()
+    im.save('Output/Only Pixels.png')
+
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+
+    m.processor.checkcmd.diffnum = 50
+
+    i = Image.new('RGB', Image.open(inputs[0]).size)
+    i.save('Output/One Fused Provided.jpg')
+
+    m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+
+    m.save()
+
+    return (post[0].height, ratio)
 
 def calibrate_focal_len(control_object_distance, control_object_height, control_object_height_px):
     """

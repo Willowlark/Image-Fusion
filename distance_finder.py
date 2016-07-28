@@ -9,9 +9,11 @@ import sys
 import warnings
 import json
 from pixel_height_finder import pixel_height_finder
+import ImageMerge
+import PixelProcess
 
 # EXAMPLE ARGS
-# 0.115 IMG_0942.jpg
+# 0.124 IMG_0986.jpg
 
 class Solution:
     """
@@ -27,7 +29,7 @@ class Solution:
     """
 
     def __init__(self, infile, known_height):
-        self.test_factor = 0.01 # TODO remove this when done
+        self.test_factor = 1.0 # TODO remove this when done
         self.test_image = infile
         self.height_object_in_question = known_height
         self.key = None
@@ -50,26 +52,58 @@ class Solution:
         im = Image.open(path)
         img_width, img_height = im.size
 
-        red = (249, 24, 0)
-        phf = pixel_height_finder(red)
-
         # TODO it is here the procedure of image merging belongs, This is temp solution to make visible the intentional difference
-        out = phf.pixel_write(path).rotate(-90)
-        out.show()
+        # red = (249, 24, 0)
+        # phf = pixel_height_finder(red)
+        # out = phf.pixel_write(path).rotate(-90)
+        # out.show()
+        # res = phf.find_height(out)
 
-        res = phf.find_height(out)
-        print "obj height px", res[0], "\nvert px pct", res[1]
+        res = self.deploy_image_merge()
+        print "obj height px", res[0], "\nimage height px", img_height
         return (res[0] * self.test_factor, img_height)
 
-        # these values were calculated by hand and visual estimation, they wil be done with a sub-procedure upon completion
-        # box = (126, 132, 158, 133)  # (126, 132, 161, 200)
-        # region = im.crop(box)
-        # obj_height_px = region.size[0]
-        #
-        # region.show()
-        # print "img dimensions", img_width, "x", img_height, "px"
-        #
-        # return obj_height_px * self.test_factor, img_height
+    # TODO refactor this method into some useful format
+    def deploy_image_merge(self):
+        inputs = ['Input/IMG_0984.jpg', 'Input/IMG_0986.jpg']
+        m = ImageMerge.Merger('Output/ImF.png')
+
+        m.processor = PixelProcess.ExtractPixelRemote()
+        m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+        m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+
+        m.merge(inputs[0])
+        m.merge(inputs[1])
+        print "Number of pixels recorded.", len(m.processor.pixels)
+
+        post = m.processor.getGroupedPixels()
+
+        print post[0]
+        ratio = post[0].height / Image.open(inputs[0]).height
+        print Image.open(inputs[0]).height
+        print "RATIO", ratio
+
+        im = Image.new("RGBA", (post[0].width, post[0].height))
+        imdata = im.load()
+
+        for p in post[0].pixels:
+            imdata[p[0] - post[0].x[0], p[1] - post[0].y[0]] = m.processor.pixels[p]
+
+        im.show()
+        im.save('Output/Only Pixels.png')
+
+        m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+
+        m.processor.checkcmd.diffnum = 50
+
+        i = Image.new('RGB', Image.open(inputs[0]).size)
+        i.save('Output/One Fused Provided.jpg')
+
+        m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+
+        m.save()
+
+        return (post[0].height, ratio)
 
     def get_exif(self, path):
         """
@@ -109,8 +143,7 @@ class Solution:
         for k, v in self.camera_dict.iteritems():
             if v[1] + 0.3 > crop_fact and v[
                 1] - 0.3 < crop_fact:  # If calculated crop factor is with +- 0.3 units of the known than it is accepted
-                key = k
-                break
+                return str(k)
 
     def calibrate_focal_len(self, control_object_distance, control_object_height_px):
         """
@@ -151,6 +184,7 @@ class Primary(Solution):
                 sys.stderr.write(str(ke))
     
     def find_distance(self):
+        print str(self.__class__.__name__), "Solving..."
         try:
             dimensions = self.get_object_px(self.test_image)
             pix_pct = dimensions[0] / dimensions[1]
@@ -172,6 +206,7 @@ class Secondary(Solution):
         Solution.__init__(self, infile, known_height)
     
     def find_distance(self):
+        print str(self.__class__.__name__), "Solving..."
         try:
             dimensions = self.get_object_px(self.test_image)
             pix_pct = dimensions[0] / dimensions[1]
@@ -182,12 +217,12 @@ class Secondary(Solution):
 
             # focal_len = float([s for s in str.split(str(tags['LensModel'])) if s.__contains__('mm')][0][0:4])
             self.focal_len = int(tags['FocalLength'][0]) / int(tags['FocalLength'][1])
-            # print "focal len mm", focal_len
+            # print "focal len mm", self.focal_len
 
-            self.find_key(tags['FocalLengthIn35mmFilm'], float(tags['FocalLength'][0]) / float(tags['FocalLength'][1]))
-            # print "determined key", key + "\""
+            self.key = self.find_key(tags['FocalLengthIn35mmFilm'], int(tags['FocalLength'][0]) / int(tags['FocalLength'][1]))
+            print "determined key", self.key
 
-            dist = self.find_distance_given_height_primary(pix_pct * self.camera_dict[key][0], self.focal_len)
+            dist = self.find_distance_given_height_primary(pix_pct * self.camera_dict[self.key][0], self.focal_len)
             return dist
 
         except Exception as e:
@@ -204,6 +239,7 @@ class Tertiary(Solution):
         Solution.__init__(self, infile, known_height)
     
     def find_distance(self):
+        print str(self.__class__.__name__), "Solving..."
         try:
             dimensions = self.get_object_px(self.test_image)
             pix_pct = dimensions[0] / dimensions[1]
@@ -214,13 +250,14 @@ class Tertiary(Solution):
 
             # focal_len = float([s for s in str.split(str(tags['LensModel'])) if s.__contains__('mm')][0][0:4])
             self.focal_len = float(tags['FocalLength'][0]) / float(tags['FocalLength'][1])
-            #print "focal len mm", focal_len
+            # print "focal len mm", focal_len
 
-            self.find_key(tags['FocalLengthIn35mmFilm'], float(tags['FocalLength'][0]) / float(tags['FocalLength'][1]))
-            #print "determined key", key + "\""
+            self.key = self.find_key(tags['FocalLengthIn35mmFilm'],
+                                     int(tags['FocalLength'][0]) / int(tags['FocalLength'][1]))
+            # print "determined key", self.key
 
             dist = (self.focal_len * self.height_object_in_question * dimensions[1]) / (
-                dimensions[0] * self.camera_dict[key][0])
+                dimensions[0] * self.camera_dict[self.key][0])
             return dist
 
         except Exception as e:
