@@ -8,12 +8,12 @@ import traceback
 import sys
 import warnings
 import json
-from pixel_height_finder import pixel_height_finder
 import ImageMerge
 import PixelProcess
 
 # EXAMPLE ARGS
-# 0.124 IMG_0986.jpg
+# 0.124 IMG_0990.jpg
+# 0.124, IMG_0992.jpg
 
 class Solution:
     """
@@ -65,7 +65,7 @@ class Solution:
 
     # TODO refactor this method into some useful format
     def deploy_image_merge(self):
-        inputs = ['Input/IMG_0984.jpg', 'Input/IMG_0986.jpg']
+        inputs = ['Input/IMG_0988.jpg', 'Input/IMG_0990.jpg']
         m = ImageMerge.Merger('Output/ImF.png')
 
         m.processor = PixelProcess.ExtractPixelRemote()
@@ -311,8 +311,6 @@ if __name__ == '__main__':
 
     directory = os.path.dirname(os.path.realpath(__file__))
     infile = os.path.join(directory, 'Input', str(sys.argv[2]))
-    #main(infile, 1.82 * 0.85)
-    main(infile, float(sys.argv[1]))    # argv[1]: 1.82 (in meters)
-    #main(infile, 1.82 * 1.15)
+    main(infile, float(sys.argv[1]))    # argv[1]: 0.124 (in meters)
 
     sys.exit(0)

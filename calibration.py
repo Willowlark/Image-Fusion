@@ -3,20 +3,19 @@ import sys
 import json
 import os
 import math
-from pixel_height_finder import pixel_height_finder
 from PIL import Image
 import PixelProcess
 import ImageMerge
 
 # ARGS:
-# "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_0985.jpg" 0.124 0.5
+# "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_0989.jpg" 0.124 1.0
 #
 
 # JSON of following format
 # {
 #     "height_object_in_question": 0.124,
 #     "focal_len": 274.19354838709677,
-#     "calibration_image": "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0985.jpg",
+#     "calibration_image": "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0989.jpg",
 #     "dist_object_in_question": 0.5
 # }
 
@@ -50,7 +49,7 @@ def find_object_px(path, color):
 
 #TODO refactor this method into some useful format
 def deploy_image_merge():
-    inputs = ['Input/IMG_0984.jpg', 'Input/IMG_0985.jpg']
+    inputs = ['Input/IMG_0988.jpg', 'Input/IMG_0989.jpg']
     m = ImageMerge.Merger('Output/ImF.png')
 
     m.processor = PixelProcess.ExtractPixelRemote()
