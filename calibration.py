@@ -1,54 +1,40 @@
 from __future__ import division
-import sys
-import json
-import os
-import math
+import sys, json, os, math, PixelProcess, ImageMerge
 from PIL import Image
-import PixelProcess
-import ImageMerge
 
-# ARGS:
-# "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_0989.jpg" 0.124 1.0
-#
-# JSON of following format
-# {
-#     "height_object_in_question": 0.124,
-#     "focal_len": 274.19354838709677,
-#     "calibration_image": "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_0989.jpg",
-#     "dist_object_in_question": 1.0
-# }
+"""
+Example ARGS:
+"/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_base.jpg" "/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_calib.jpg" 0.124 1.0
+...produces JSON of following format:
+{
+    "calibration_image": "/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_calib.jpg",
+    "height_object_in_question": 0.124,
+    "focal_len": 556.4516129032259,
+    "base_image": "/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_base.jpg",
+    "dist_object_in_question": 1.0
+}
 
-def parse_args():
-    global calibration_image
-    global height_object_in_question
-    global dist_object_in_question
-    calibration_image = sys.argv[1]
-    height_object_in_question = sys.argv[2]
-    dist_object_in_question = sys.argv[3]
+  OR
 
-def find_object_px(path, color):
+Example ARGS:
+69 0.124 1.0
+...produces JSON of following format:
+{
+    "height_object_in_question": 0.124,
+    "focal_len": 556.4516129032259,
+    "dist_object_in_question": 1.0
+}
+"""
+
+def find_object_px(base_file, calib_file):
     """
     This method should will be finished to find the height of the found object in pixels
     to be used essential to every distance method
 
-    `path` the path to the image file being investigated
-    `color` the color that you sih to look for in the file of path
     `return` (obj_height, img_height) the height of teh object in px, and the height of the image in pixels
     """
 
-    # TODO it is here the procedure of image merging belongs
-    # phf = pixel_height_finder(color)
-    # out = phf.pixel_write(path).rotate(-90)
-    # out.show()
-    # res = phf.find_height(out)
-
-    res = deploy_image_merge()
-    print "obj height px", res[0], "\nvert px pct", res[1]
-    return res
-
-#TODO refactor this method into some useful format
-def deploy_image_merge():
-    inputs = ['Input/IMG_base.jpg', 'Input/IMG_calib.jpg']
+    inputs = [base_file, calib_file]
     m = ImageMerge.Merger('Output/ImF.png')
 
     m.processor = PixelProcess.ExtractPixelRemote()
@@ -61,7 +47,6 @@ def deploy_image_merge():
 
     post = m.processor.getGroupedPixels()
 
-    # TODO are width and height mixed up?
     print post[0]
     ratio = post[0].height / Image.open(inputs[0]).height
     print "RATIO", ratio
@@ -86,7 +71,9 @@ def deploy_image_merge():
 
     m.save()
 
-    return (post[0].height, ratio)
+    print "obj height px", post[0].height, "\nvert px pct", ratio
+
+    return post[0].height
 
 def calibrate_focal_len(control_object_distance, control_object_height, control_object_height_px):
     """
@@ -103,25 +90,52 @@ def calibrate_focal_len(control_object_distance, control_object_height, control_
     print "focal len found,", focal_len_px, "px"
     return focal_len_px
 
-# running methods
-parse_args()    # get args from command line, see example args at top of file
+def run_me():
+    print "Calibrating focal length"
 
-colour = (249, 24, 0) # red, the color chosen to be examine d for
-object_height_px = find_object_px(calibration_image, colour)[0]
+    global dist_object_in_question
+    global height_object_in_question
+    global object_height_px
 
-focal_len = calibrate_focal_len(dist_object_in_question, height_object_in_question, object_height_px)   # find focal len px
+    # running methods
+    if len(sys.argv) > 4:
+        base_image = sys.argv[1]
+        calib_image = sys.argv[2]
+        height_object_in_question = float(sys.argv[3])
+        dist_object_in_question = float(sys.argv[4])    # get args from command line, see example args at top of file
 
-directory = os.path.dirname(os.path.realpath(__file__))
-calib_file = os.path.join(directory, 'json', 'calib_info.json') # destination of calibration storage
+        object_height_px = find_object_px(base_image, calib_image)
 
-with open(calib_file, 'w') as fp:   # write all pre-conditions and focal len post-condition to calib_file
-    json.dump({"height_object_in_question" : float(height_object_in_question),
-                "dist_object_in_question" : float(dist_object_in_question),
-                "calibration_image" : calibration_image,
-               "focal_len" : float(focal_len)}, fp, indent=4)
+        focal_len = calibrate_focal_len(dist_object_in_question, height_object_in_question, object_height_px)   # find focal len px
 
-print "calibration finished", calib_file
+        directory = os.path.dirname(os.path.realpath(__file__))
+        calib_file = os.path.join(directory, 'json', 'calib_info.json') # destination of calibration storage
 
+        with open(calib_file, 'w') as fp:   # write all pre-conditions and focal len post-condition to calib_file
+            json.dump({"height_object_in_question" : height_object_in_question,
+                        "dist_object_in_question" : dist_object_in_question,
+                       "base_image" : base_image,
+                        "calibration_image" : calib_image,
+                       "focal_len" : focal_len}, fp, indent=4)
+
+    else:
+        object_height_px = float(sys.argv[1])
+        height_object_in_question = float(sys.argv[2])
+        dist_object_in_question = float(sys.argv[3])
+
+        focal_len = calibrate_focal_len(dist_object_in_question, height_object_in_question, object_height_px)   # find focal len px
+
+        directory = os.path.dirname(os.path.realpath(__file__))
+        calib_file = os.path.join(directory, 'json', 'calib_info.json') # destination of calibration storage
+
+        with open(calib_file, 'w') as fp:   # write all pre-conditions and focal len post-condition to calib_file
+            json.dump({"height_object_in_question" : height_object_in_question,
+                        "dist_object_in_question" : dist_object_in_question,
+                        "focal_len" : focal_len}, fp, indent=4)
+
+    print "calibration finished, see", calib_file
+
+run_me()
 sys.exit(0)
 
 

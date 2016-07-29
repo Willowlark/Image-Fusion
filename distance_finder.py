@@ -292,6 +292,8 @@ def main(infile, known_height):
 
     # run me
     df = Macro(Primary(infile, known_height), Secondary(infile, known_height), Tertiary(infile, known_height))
+    # df = Macro(Primary(os.path.join(directory, 'Input', 'IMG_two.jpg'), known_height), Primary(os.path.join(directory, 'Input', 'IMG_onehalf.jpg'), known_height), Primary(os.path.join(directory, 'Input', 'IMG_half.jpg'), known_height))
+    # df = Macro(Primary(os.path.join(directory, 'Input', 'IMG_onehalf.jpg'), known_height))
     results = df.run()
     pprint(results)
 
