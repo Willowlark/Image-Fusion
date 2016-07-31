@@ -1,56 +1,101 @@
 from PIL import Image
-import os, sys
+import sys
 
-def autorotate(inpath, outpath):
+"""
+This class contains method that are desirable to functional application of the procedure of object distance detection
+Theses two methods can be applied to manually rotate an image, and most importantly preserve the EXIF tags, through specification or by nature of the image being examined.
+Auto-rotate will examine the exif tags for all images that are not upright with respect to the sensor of the camera.
+Rotate requires a parametrized number value for the angle the image must be rotated (of value 360 to -360)
+"""
 
-    """ This function auto rotates a picture """
+def autorotate(inpath, outpath=None):
+    """
+    autorotate corrects an image's orientation for processing by the image_merge, pixelProcess, distance_finder, and calibration
+
+    """
+
     image = Image.open(inpath)
     exif_store = image.info['exif']
     exif = image._getexif()
 
     orientation_key = 274 # cf ExifTags
-    if orientation_key in exif:
-        orientation = exif[orientation_key]
 
-        rotate_values = {
-            3: 180,
-            6: 270,
-            8: 90
-        }
+    if exif is not None:
 
-        if orientation in rotate_values:
-            image = image.rotate(rotate_values[orientation], resample=Image.BICUBIC, expand=True)
-            image.show()
-            image.save(outpath, quality=100, exif=exif_store)
+        if orientation_key in exif:
+            orientation = exif[orientation_key]
+
+            rotate_values = {3: 180, 6: 270, 8: 90}
+
+            if orientation in rotate_values:
+                image = image.rotate(rotate_values[orientation], resample=Image.BICUBIC, expand=True)
+                image.show()
+
+                if outpath is not None:
+                    image.save(outpath, quality=100, exif=exif_store)
+                else:
+                    image.save(inpath, quality=100, exif=exif_store)
             return True
+
     return False
 
-def rotate(inpath, outpath, degree):
+def rotate(degree, inpath, outpath=None):
+    """
+    rotate corrects an image's orientation based on specified parameter degree
+
+    """
 
     image = Image.open(inpath)
     exif_store = image.info['exif']
     exif = image._getexif()
+
     if exif is not None:
         image = image.rotate(degree, resample=Image.BICUBIC, expand=True)
         image.show()
-        image.save(outpath, quality=100, exif=exif_store)
+
+        if outpath is not None:
+            image.save(outpath, quality=100, exif=exif_store)
+        else:
+            image.save(inpath, quality=100, exif=exif_store)
+
         return True
     return False
 
-def main():
-    imgs = ['IMG_base.jpg', 'IMG_calib.jpg', 'IMG_two.jpg', 'IMG_half.jpg', 'IMG_onehalf.jpg']
-    for img in imgs:
-        infile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', img)
-        outfile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'temp.jpg')
-        print autorotate(infile, infile)
+def debug():
+    """
+    used only in testing
 
-def main2():
-    h, w = Image.open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', 'IMG_0992.jpg')).size
-    print w, h
-    im = Image.new('RGB', (h, w))
-    im.save(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'One Fused Provided.jpg'), quality=100)
+    """
+
+    infile = "/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_rot_test.jpg"
+    outfile = "/Users/robertseedorf/PycharmProjects/Image-Fusion/Output/temp.jpg"
+    print autorotate(infile, outfile)
+
+def main(inpath, outpath=None, degree=None):
+    """
+    method for use outside of the realm of the individual script
+
+    """
+
+    if degree is not None:
+        return rotate(degree, inpath, outpath)
+    else:
+        return autorotate(inpath, outpath)
 
 if __name__ == '__main__':
+    """
+    run-me
+    """
 
-    main()
+    infile = sys.argv[1]
+    outfile = None
+    degree = None
+
+    if len(sys.argv) > 2:
+        outfile = sys.argv[2]
+        if len(sys.argv) > 3:
+            degree = float(sys.argv[3])
+
+    print main(infile, outfile, degree)
+
     sys.exit(0)
