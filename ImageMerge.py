@@ -237,6 +237,9 @@ if __name__ == "__main__":
 
     post = m.processor.getGroupedPixels()
 
+    temp = sorted(post, key=lambda x: x.height)
+    post = temp
+
     print post[0]
 
     # for group in post:  # Post the groups to the outimage.
@@ -248,6 +251,11 @@ if __name__ == "__main__":
     imdata = im.load()
 
     for p in post[0].pixels:
+        print p
+        print p[0]
+        print post[0]
+        print post[0].x
+        print post[0].x[0]
         imdata[p[0]-post[0].x[0], p[1]-post[0].y[0]] = m.processor.pixels[p]
 
     im.show()
