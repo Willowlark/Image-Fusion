@@ -27,9 +27,10 @@ class Solution:
     The final method, investigates the tags for a special 'subject distance' tag that assumes the accurate region of focus and returns that distance fom the camera
     """
 
-    def __init__(self, infile, known_height):
-        self.test_factor = 1.0 # TODO remove this when done
-        self.test_image = infile
+    def __init__(self, base_path, obj_path, known_height):
+        self.test_factor = 1.0      # TODO remove this when done
+        self.base_image = base_path
+        self.obj_image = obj_path
         self.height_object_in_question = known_height
         self.key = None
         self.focal_len = None
@@ -40,7 +41,7 @@ class Solution:
             data = json.load(data_file)
             self.camera_dict = data
 
-    def get_object_px(self, path):
+    def get_object_px(self, base_file, obj_file):
         """
         This method should will be finished to find the height of the found object in pixels
         to be used essential to every distance method
@@ -48,11 +49,11 @@ class Solution:
         `path` the path to the image file being investigated
         `return` (obj_height, img_height) the height of teh object in px, and the height of the image in pixels
         """
-        im = Image.open(path)
+        im = Image.open(obj_file)
         img_width, img_height = im.size
 
         # TODO it is here the procedure of image merging belongs, This is temp solution to make visible the intentional difference
-        res = self.deploy_image_merge(path)
+        res = self.deploy_image_merge(obj_file)
         print "obj height px", res[0], "\nimage height px", img_height
         return (res[0] * self.test_factor, img_height)
 
@@ -176,7 +177,7 @@ class Primary(Solution):
     def find_distance(self):
         print str(self.__class__.__name__), "Solving..."
         try:
-            dimensions = self.get_object_px(self.test_image)
+            dimensions = self.get_object_px(self.base_image, self.test_image)
             pix_pct = dimensions[0] / dimensions[1]
             # print "pix pct", pix_pct
 
