@@ -32,7 +32,8 @@ if __name__ == '__main__':
     hog = cv2.HOGDescriptor()
     hog.setSVMDetector( cv2.HOGDescriptor_getDefaultPeopleDetector() )
 
-    for fn in it.chain(*map(glob, sys.argv[1:])):
+    # for fn in it.chain(*map(glob, sys.argv[1:])):
+    for fn in ["Output\ImFuse.jpg"]:
         print fn, ' - ',
         try:
             img = cv2.imread(fn)

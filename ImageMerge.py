@@ -224,12 +224,13 @@ class Merger:
 
 if __name__ == "__main__":
     debug = 0
-    inputs = ['Input/One Visual.jpg', 'Input/One Infrared.jpg']
-    m = Merger('Output/ImF.png')
+    inputs = ['Input/Camera 1.jpg', 'Input/camera 2.jpg']
+    m = Merger('Output/ImFuse.jpg')
 
     m.processor = PixelProcess.ExtractPixelRemote()
     m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
     m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+    m.processor.checkcmd.diffnum = 80
 
     m.merge(inputs[0])
     m.merge(inputs[1])
@@ -239,24 +240,17 @@ if __name__ == "__main__":
 
     print post[0]
 
-    # for group in post:  # Post the groups to the outimage.
-    #     for p in group.pixels:
-    #         imdata[p[0], p[1]] = m.processor.pixels[p]
-
-    #Output the first group to it's own image.
+    # Output the first group to it's own image.
     im = Image.new("RGBA", (post[0].width, post[0].height))
     imdata = im.load()
 
     for p in post[0].pixels:
         imdata[p[0]-post[0].x[0], p[1]-post[0].y[0]] = m.processor.pixels[p]
-
-    im.show()
-    im.save('Output/Only Pixels.png')
+    im.save('Output/Only Pixels.jpg')
 
 
     m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
 
-    m.processor.checkcmd.diffnum = 50
-    m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+    # m.exportMerge('Output/DifferenceFile.jpg', 'Output/One Fused Provided.jpg')
 
     m.save()
