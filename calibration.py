@@ -47,9 +47,10 @@ def find_object_px(base_file, calib_file):
 
     post = m.processor.getGroupedPixels()
 
-    print post[0]
+    print "object @", post[0]
     ratio = post[0].height / Image.open(inputs[0]).height
-    print "RATIO", ratio
+    print "image height", Image.open(inputs[0]).height
+    print "pct of height", ratio
 
     im = Image.new("RGBA", (post[0].width, post[0].height))
     imdata = im.load()
