@@ -1,6 +1,6 @@
 from __future__ import division
 from PIL import Image, ImageOps
-import os, sys
+import os, sys, time
 from pprint import pprint
 
 class un_crop():
@@ -62,41 +62,65 @@ class un_crop():
 
         return im
 
-    def find_loc(self, original, img):
+def find_loc_double_check(original, img):
 
-        pixels = list(img.getdata())
-        width, height = img.size
-        img_pixels = [pixels[i * width:(i + 1) * width] for i in xrange(height)]
-        # pprint(img_pixels)
+    pixels = list(img.getdata())
+    width, height = img.size
+    img_pixels = [pixels[i * width:(i + 1) * width] for i in xrange(height)]
+    # pprint(img_pixels)
 
-        pixels = list(original.getdata())
-        width, height = original.size
-        orig_pixels = [pixels[i * width:(i + 1) * width] for i in xrange(height)]
-        # pprint(orig_pixels)
+    pixels = list(original.getdata())
+    width, height = original.size
+    orig_pixels = [pixels[i * width:(i + 1) * width] for i in xrange(height)]
+    # pprint(orig_pixels)
 
-        first_row_img = img_pixels[0]
-        last_row_img = img_pixels[-1]
+    first_row_img = img_pixels[0]
+    last_row_img = img_pixels[-1]
 
-        row_top = 0
-        col_top = 0
-        for row_orig in orig_pixels:
-            col_top = sublistExists(row_orig, first_row_img)
-            if col_top > 0:
-                break
-            row_top +=1
+    row_top = 0
+    col_top = 0
+    for row_orig in orig_pixels:
+        col_top = sublistExists(row_orig, first_row_img)
+        if col_top > 0:
+            break
+        row_top +=1
 
-        row_bot = 0
-        col_bot = 0
-        for row_orig in orig_pixels:
-            col_bot = sublistExists(row_orig, last_row_img)
-            if col_bot > 0:
-                break
-            row_bot += 1
+    row_bot = 0
+    col_bot = 0
+    for row_orig in orig_pixels:
+        col_bot = sublistExists(row_orig, last_row_img)
+        if col_bot > 0:
+            break
+        row_bot += 1
 
-        if row_bot - row_top == len(img_pixels)-1:
-            return row_top, col_top
-        else:
-            return (-1, -1)
+    if row_bot - row_top == len(img_pixels)-1:
+        return row_top, col_top
+    else:
+        return (-1, -1)
+
+def find_loc_single_check(original, img):
+
+    pixels = list(img.getdata())
+    width, height = img.size
+    img_pixels = [pixels[i * width:(i + 1) * width] for i in xrange(height)]
+    # pprint(img_pixels)
+
+    pixels = list(original.getdata())
+    width, height = original.size
+    orig_pixels = [pixels[i * width:(i + 1) * width] for i in xrange(height)]
+    # pprint(orig_pixels)
+
+    first_row_img = img_pixels[0]
+
+    row_top = 0
+    col_top = 0
+    for row_orig in orig_pixels:
+        col_top = sublistExists(row_orig, first_row_img)
+        if col_top > 0:
+            break
+        row_top +=1
+
+    return row_top, col_top
 
 def sublistExists(list, sublist):
     for i in range(len(list)-len(sublist)+1):
@@ -128,30 +152,66 @@ def my_rot(img):
 
 def place_image(orig, img):
 
-    uc = un_crop()
-    loc = uc.find_loc(orig, img)
-
+    loc = find_loc_double_check(orig, img)
     if loc == (-1, -1):
         return False
 
     img_with_border = ImageOps.expand(img, border=1, fill='red')
-    orig.paste(img_with_border, (loc))
+    orig.paste(img_with_border, loc)
     orig.show()
+    print loc
     return True
 
 if __name__ == '__main__':
 
-    orig = Image.open('Input/Two Infrared.png')
-    # orig = orig.rotate(90, resample=Image.BICUBIC, expand=True)
-    # orig.show()
-    img = Image.open('Input/Two Crop.png')
-    # img = img.rotate(-90, resample=Image.BICUBIC, expand=True)
-    # img.show()
-    orig = ImageOps.expand(orig, border=max(img.size), fill='black')
+    start_time = time.time()
 
-    # img = my_rot(img)
-    # orig = my_rot(orig)
+    tests = []
 
-    print place_image(orig,img)
+    img = Image.open('Input/Two Crop test.png')
+    orig = Image.open('Input/Two Infrared test.png')
+    # orig = ImageOps.expand(Image.open('Input/Two Infrared.png'), border=max(img.size), fill='black')
+    orig = orig.crop((-1*img.size[0], -1*img.size[1], orig.size[0]+img.size[0], orig.size[1]+img.size[1]))
+
+    first = (orig, img)
+
+    tests.append(first)
+
+    # top row
+    for i in xrange(0, int(img.size[0]*.80)):
+        new_img = img.crop((i, 0, img.size[0], img.size[1]))
+        tests.append((orig, new_img))
+
+    # left column
+    img = my_rot(img)
+    orig = my_rot(orig)
+    for i in xrange(0, int(img.size[1]*.80)):
+        new_img = img.crop((0, i, img.size[0], img.size[1]))
+        tests.append((orig, new_img))
+
+    # bottom row
+    img = my_rot(my_rot(img))
+    orig = my_rot(my_rot(orig))
+    for i in xrange(0, int(img.size[1] * .80)):
+        new_img = img.crop((0, i, img.size[0], img.size[1]))
+        tests.append((orig, new_img))
+
+    # right col
+    img = my_rot(my_rot(my_rot(img)))
+    orig = my_rot(my_rot(my_rot(orig)))
+    for i in xrange(0, int(img.size[1] * .80)):
+        new_img = img.crop((0, i, img.size[0], img.size[1]))
+        tests.append((orig, new_img))
+
+    for entry in tests:
+        if place_image(*entry):
+            print entry[1].info, "Found in", entry[0].info
+            break
+        else:
+            sys.stdout.write('.')
+            sys.stdout.flush()
+
+    print("\n--- %s seconds ---" % (time.time() - start_time))
+    sys.exit(0)
 
 
