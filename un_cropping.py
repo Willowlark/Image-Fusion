@@ -1,8 +1,7 @@
 from __future__ import division
-from PIL import Image
-import os
+from PIL import Image, ImageOps
+import os, sys
 from pprint import pprint
-import numpy
 
 class un_crop():
 
@@ -63,7 +62,7 @@ class un_crop():
 
         return im
 
-    def exe(self, original, img):
+    def find_loc(self, original, img):
 
         pixels = list(img.getdata())
         width, height = img.size
@@ -76,38 +75,83 @@ class un_crop():
         # pprint(orig_pixels)
 
         first_row_img = img_pixels[0]
-        top_left_img = first_row_img[0]
-        top_right_img = first_row_img[-1]
+        last_row_img = img_pixels[-1]
 
-        row_count = 0
-        for row in orig_pixels:
-            if sublistExists(row, first_row_img):
+        row_top = 0
+        col_top = 0
+        for row_orig in orig_pixels:
+            col_top = sublistExists(row_orig, first_row_img)
+            if col_top > 0:
                 break
-            row_count +=1
+            row_top +=1
 
-        print row_count
+        row_bot = 0
+        col_bot = 0
+        for row_orig in orig_pixels:
+            col_bot = sublistExists(row_orig, last_row_img)
+            if col_bot > 0:
+                break
+            row_bot += 1
 
-        # row_count = 0
-        # for row in orig_pixels:
-        #     col_count = 0
-        #     for pixel in row:
-        #         if pixel == top_left_img:
-        #             index_of_opposite = row.index(pixel) + len(img_pixels[0])
-        #             if top_right_img == row[index_of_opposite]:
-        #                 print "found @", row_count, col_count
-        #         col_count += 1
-        #     row_count += 1
+        if row_bot - row_top == len(img_pixels)-1:
+            return row_top, col_top
+        else:
+            return (-1, -1)
 
 def sublistExists(list, sublist):
     for i in range(len(list)-len(sublist)+1):
         if sublist == list[i:i+len(sublist)]:
-            return True #return position (i) if you wish
-    return False #or -1
+            return i
+    return -1
+
+def rot_list(list):
+    ret = []
+    width = len(list[0])
+    for i in xrange(0, width):
+        col = []
+        for row in list:
+            col.append(row[i])
+        ret.append(col)
+    return ret
+
+def my_rot(img):
+    # orig is image that is being rotated
+    pixels = list(img.getdata())
+    width, height = img.size
+    img_pixels = [pixels[i * width:(i + 1) * width] for i in xrange(height)]
+    rotated = rot_list(img_pixels)
+    flattened = [item for sublist in rotated for item in sublist]
+
+    ret = Image.new("RGBA", (width, height))
+    ret.putdata(flattened[::-1])
+    return ret
+
+def place_image(orig, img):
+
+    uc = un_crop()
+    loc = uc.find_loc(orig, img)
+
+    if loc == (-1, -1):
+        return False
+
+    img_with_border = ImageOps.expand(img, border=1, fill='red')
+    orig.paste(img_with_border, (loc))
+    orig.show()
+    return True
 
 if __name__ == '__main__':
 
-    orig = Image.open('Input/two Infrared.jpg')
-    img = orig.crop((100, 100, 200, 200))
-    img.show()
-    uc = un_crop()
-    print uc.exe(orig, img)
+    orig = Image.open('Input/Two Infrared.png')
+    # orig = orig.rotate(90, resample=Image.BICUBIC, expand=True)
+    # orig.show()
+    img = Image.open('Input/Two Crop.png')
+    # img = img.rotate(-90, resample=Image.BICUBIC, expand=True)
+    # img.show()
+    orig = ImageOps.expand(orig, border=max(img.size), fill='black')
+
+    # img = my_rot(img)
+    # orig = my_rot(orig)
+
+    print place_image(orig,img)
+
+
