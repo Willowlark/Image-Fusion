@@ -8,6 +8,7 @@ Auto-rotate will examine the exif tags for all images that are not upright with 
 Rotate requires a parametrized number value for the angle the image must be rotated (of value 360 to -360)
 """
 
+
 def autorotate(inpath, outpath=None):
     """
     autorotate corrects an image's orientation for processing by the image_merge, pixelProcess, distance_finder, and calibration
