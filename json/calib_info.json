@@ -1,0 +1,7 @@
+{
+    "calibration_image": "/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_calib.jpg", 
+    "height_object_in_question": 0.124, 
+    "focal_len": 556.4516129032259, 
+    "base_image": "/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_base.jpg", 
+    "dist_object_in_question": 1.0
+}

@@ -1,3 +1,4 @@
+from __future__ import division
 from PIL import Image
 import PixelProcess
 
@@ -237,13 +238,15 @@ if __name__ == "__main__":
 
     post = m.processor.getGroupedPixels()
 
-    print post[0]
+    print post[0], "W", post[0].width, "H", post[0].height
+    print "RATIO", post[0].height / Image.open(inputs[0]).height
 
     # for group in post:  # Post the groups to the outimage.
     #     for p in group.pixels:
     #         imdata[p[0], p[1]] = m.processor.pixels[p]
 
     #Output the first group to it's own image.
+
     im = Image.new("RGBA", (post[0].width, post[0].height))
     imdata = im.load()
 
@@ -253,10 +256,10 @@ if __name__ == "__main__":
     im.show()
     im.save('Output/Only Pixels.png')
 
-
     m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
 
     m.processor.checkcmd.diffnum = 50
+
     m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
 
     m.save()
