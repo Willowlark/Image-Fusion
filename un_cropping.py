@@ -150,73 +150,83 @@ def my_rot(img):
     ret.putdata(flattened[::-1])
     return ret
 
-def place_image(img, new_img, orig):
-
-    img_w, img_h = img.size
+def place_image(img, new_img, orig, loc, highlight=False):
+    img_p = img
+    if highlight:
+        img_p = ImageOps.expand(img.crop((1,1,img.size[0]-1,img.size[1]-1)), border=1, fill='red')
+    img_w, img_h = img_p.size
     new_w, new_h = new_img.size
-    offset = (img_w - new_w, img_h - new_h)
-    img_with_border = ImageOps.expand(img, border=1, fill='red')
-    orig_with_bars = orig.crop((0 - offset[0], 0 - offset[1], orig.size[0] + offset[0], orig.size[1] + offset[1]))
-    orig_with_bars.paste(img_with_border, loc)
-    return orig_with_bars
+    offset = ((img_w - new_w)+1, (img_h - new_h)+1)
+    res = orig.crop((0 - offset[0], 0 - offset[1], orig.size[0] + offset[0], orig.size[1] + offset[1]))
+    res.paste(img_p, loc)
+    return res
+
+def main(subimg, totimg):
+    min_overlap_factor = 0.9
+    tests = []
+    first = (totimg, subimg)
+
+    tests.append(first)
+
+    # top row
+    for i in xrange(0, int(subimg.size[0] * min_overlap_factor)):
+        new_img = subimg.crop((i, 0, subimg.size[0], subimg.size[1]))
+        tests.append((totimg, new_img))
+
+    # left column
+    img = my_rot(subimg)
+    orig = my_rot(totimg)
+    for i in xrange(0, int(img.size[1] * min_overlap_factor)):
+        new_img = img.crop((0, i, img.size[0], img.size[1]))
+        tests.append((orig, new_img))
+
+    # bottom row
+    img = my_rot(my_rot(subimg))
+    orig = my_rot(my_rot(totimg))
+    for i in xrange(0, int(img.size[1] * min_overlap_factor)):
+        new_img = img.crop((0, i, img.size[0], img.size[1]))
+        tests.append((orig, new_img))
+
+    # right col
+    img = my_rot(my_rot(my_rot(subimg)))
+    orig = my_rot(my_rot(my_rot(totimg)))
+    for i in xrange(0, int(img.size[1] * min_overlap_factor)):
+        new_img = img.crop((0, i, img.size[0], img.size[1]))
+        tests.append((orig, new_img))
+
+    sys.stdout.write('...')
+    sys.stdout.flush()
+    for entry in tests:
+        loc = find_loc_double_check(*entry)
+        if loc:
+            print "\n", entry[1].info, "Found in", entry[0].info
+            res = place_image(subimg, entry[1], entry[0], loc, highlight=False)
+            return res
+            # break
+            # raw_input("Press Enter to continue...")
+        else:
+            sys.stdout.write('.')
+            sys.stdout.flush()
 
 if __name__ == '__main__':
 
     start_time = time.time()
 
-    tests = []
-    index = ()
-
     img = Image.open('Input/Two Crop test.png')
-    #img = img.filter(ImageFilter.FIND_EDGES)
     orig = Image.open('Input/Two Infrared test.png')
-    #orig = orig.filter(ImageFilter.FIND_EDGES)
 
-    # orig = ImageOps.expand(Image.open('Input/Two Infrared.png'), border=max(img.size), fill='black')
-    # orig = orig.crop((-1*img.size[0], -1*img.size[1], orig.size[0]+img.size[0], orig.size[1]+img.size[1]))
+    ret = main(img, orig)
+    ret.show()
 
-    first = (orig, img)
+    img = Image.open('Input/Two Crop test2.png')
 
-    tests.append(first)
+    ret = main(img, ret)
+    ret.show()
 
-    # top row
-    for i in xrange(0, int(img.size[0]*.80)):
-        new_img = img.crop((i, 0, img.size[0], img.size[1]))
-        tests.append((orig, new_img))
+    img = Image.open('Input/Two Crop test3.png')
 
-    # left column
-    img = my_rot(img)
-    orig = my_rot(orig)
-    for i in xrange(0, int(img.size[1]*.80)):
-        new_img = img.crop((0, i, img.size[0], img.size[1]))
-        tests.append((orig, new_img))
-
-    # bottom row
-    img = my_rot(my_rot(img))
-    orig = my_rot(my_rot(orig))
-    for i in xrange(0, int(img.size[1] * .80)):
-        new_img = img.crop((0, i, img.size[0], img.size[1]))
-        tests.append((orig, new_img))
-
-    # right col
-    img = my_rot(my_rot(my_rot(img)))
-    orig = my_rot(my_rot(my_rot(orig)))
-    for i in xrange(0, int(img.size[1] * .80)):
-        new_img = img.crop((0, i, img.size[0], img.size[1]))
-        tests.append((orig, new_img))
-
-    for entry in tests:
-        loc = find_loc_double_check(*entry)
-        if loc:
-            print entry[1].info, "Found in", entry[0].info
-            img = Image.open('Input/Two Crop test.png')
-            res = place_image(img, entry[1], entry[0])
-            res.show()
-            break
-            # raw_input("Press Enter to continue...")
-        else:
-            sys.stdout.write('.')
-            sys.stdout.flush()
+    ret = main(img, ret)
+    ret.show()
 
     print("\n--- %s seconds ---" % (time.time() - start_time))
     sys.exit(0)
