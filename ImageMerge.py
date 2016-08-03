@@ -237,7 +237,7 @@ if __name__ == "__main__":
 
     post = m.processor.getGroupedPixels()
 
-    post.sortCount()
+    post.sortRatio()
 
     f = post.first()
     print f

@@ -137,8 +137,9 @@ class PixelGroup(object):
     def _size(self):
 
         if self.count <= 1:
-            p = [self.pixels[0]]
-            return p, p, 1, 1, 100
+            x = [self.pixels[0][0], self.pixels[0][0]]
+            y = [self.pixels[0][1], self.pixels[0][1]]
+            return x, y, 1, 1, 100
 
         x = []
         y = []
