@@ -237,26 +237,21 @@ if __name__ == "__main__":
 
     post = m.processor.getGroupedPixels()
 
-    temp = sorted(post, key=lambda x: x.height)
-    post = temp
+    post.sortCount()
 
-    print post[0]
+    f = post.first()
+    print f
 
     # for group in post:  # Post the groups to the outimage.
     #     for p in group.pixels:
     #         imdata[p[0], p[1]] = m.processor.pixels[p]
 
     #Output the first group to it's own image.
-    im = Image.new("RGBA", (post[0].width, post[0].height))
+    im = Image.new("RGBA", (f.width, f.height))
     imdata = im.load()
 
-    for p in post[0].pixels:
-        print p
-        print p[0]
-        print post[0]
-        print post[0].x
-        print post[0].x[0]
-        imdata[p[0]-post[0].x[0], p[1]-post[0].y[0]] = m.processor.pixels[p]
+    for pixel in f.generator():
+        imdata[pixel[0]-f.x[0], pixel[1]-f.y[0]] = m.processor.pixels[pixel]
 
     im.show()
     im.save('Output/Only Pixels.png')

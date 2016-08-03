@@ -74,7 +74,7 @@ class ExtractPixelRemote(PixelRemote):
 
     def getGroupedPixels(self):
 
-        groups = []
+        groups = GroupContainer()
         processed = []
 
         for point in self.pixels:
@@ -94,23 +94,49 @@ class ExtractPixelRemote(PixelRemote):
 
                 explore.extend([n for n in nearby if n not in subprocess and n not in explore and n in self.pixels])
             processed.extend(subprocess)
-            groups.append(PixelGroup(subprocess))
+            groups.add(PixelGroup(subprocess))
             # groups.append(subprocess)
         return groups
+
+class GroupContainer(object):
+
+    def __init__(self):
+        self.groups = []
+
+    def add(self, group):
+        self.groups.append(group)
+
+    def sortRatio(self, reverse=True):  # Normal is low value first.
+        self.groups = sorted(self.groups, key=lambda x: x.ratio, reverse=reverse)
+
+    def sortCount(self, reverse=True):  # Normal is low value first.
+        self.groups = sorted(self.groups, key=lambda x: x.count, reverse=reverse)
+
+    def first(self):
+        return self.groups[0]
+
+    def pop(self):
+        return self.groups.pop(0)
 
 
 class PixelGroup(object):
 
     def __str__(self):
-        return repr(self.x)+' '+repr(self.y)+' '+repr(self.height)+' '+repr(self.width)+' '+repr(self.ratio)+'%'
+        return 'x:' + repr(self.x) + ' ' + 'y:' + repr(self.y) + ' ' + 'height:' + \
+               repr(self.height) + ' ' + 'width:' + repr(self.width) + ' ' + repr(self.ratio) + '%'
 
     def __init__(self, groups):
         self.pixels = groups
+        self.count = len(self.pixels)
         self.x, self.y, self.height, self.width, self.ratio = self._size()
+
+    def generator(self):
+        for p in self.pixels:
+            yield p
 
     def _size(self):
 
-        if len(self.pixels) <= 1:
+        if self.count <= 1:
             p = [self.pixels[0]]
             return p, p, 1, 1, 100
 
