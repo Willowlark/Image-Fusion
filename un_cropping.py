@@ -1,5 +1,5 @@
 from __future__ import division
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageFilter
 import os, sys, time
 from pprint import pprint
 
@@ -96,7 +96,7 @@ def find_loc_double_check(original, img):
     if row_bot - row_top == len(img_pixels)-1:
         return row_top, col_top
     else:
-        return (-1, -1)
+        return ()
 
 def find_loc_single_check(original, img):
 
@@ -150,28 +150,30 @@ def my_rot(img):
     ret.putdata(flattened[::-1])
     return ret
 
-def place_image(orig, img):
+def place_image(img, new_img, orig):
 
-    loc = find_loc_double_check(orig, img)
-    if loc == (-1, -1):
-        return False
-
+    img_w, img_h = img.size
+    new_w, new_h = new_img.size
+    offset = (img_w - new_w, img_h - new_h)
     img_with_border = ImageOps.expand(img, border=1, fill='red')
-    orig.paste(img_with_border, loc)
-    orig.show()
-    print loc
-    return True
+    orig_with_bars = orig.crop((0 - offset[0], 0 - offset[1], orig.size[0] + offset[0], orig.size[1] + offset[1]))
+    orig_with_bars.paste(img_with_border, loc)
+    return orig_with_bars
 
 if __name__ == '__main__':
 
     start_time = time.time()
 
     tests = []
+    index = ()
 
     img = Image.open('Input/Two Crop test.png')
+    #img = img.filter(ImageFilter.FIND_EDGES)
     orig = Image.open('Input/Two Infrared test.png')
+    #orig = orig.filter(ImageFilter.FIND_EDGES)
+
     # orig = ImageOps.expand(Image.open('Input/Two Infrared.png'), border=max(img.size), fill='black')
-    orig = orig.crop((-1*img.size[0], -1*img.size[1], orig.size[0]+img.size[0], orig.size[1]+img.size[1]))
+    # orig = orig.crop((-1*img.size[0], -1*img.size[1], orig.size[0]+img.size[0], orig.size[1]+img.size[1]))
 
     first = (orig, img)
 
@@ -204,9 +206,14 @@ if __name__ == '__main__':
         tests.append((orig, new_img))
 
     for entry in tests:
-        if place_image(*entry):
+        loc = find_loc_double_check(*entry)
+        if loc:
             print entry[1].info, "Found in", entry[0].info
+            img = Image.open('Input/Two Crop test.png')
+            res = place_image(img, entry[1], entry[0])
+            res.show()
             break
+            # raw_input("Press Enter to continue...")
         else:
             sys.stdout.write('.')
             sys.stdout.flush()
