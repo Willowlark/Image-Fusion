@@ -1,4 +1,3 @@
-from __future__ import division
 from PIL import Image
 import PixelProcess
 
@@ -153,7 +152,6 @@ class Merger:
         self.processor.comparedata = compareimage.load()
 
         counter = 0
-        print self.outimage.size
         for y in range(self.outimage.size[1]):
             for x in range(self.outimage.size[0]):
                 counter += self.processor.run(x, y, x, y)
@@ -239,15 +237,25 @@ if __name__ == "__main__":
 
     post = m.processor.getGroupedPixels()
 
-    print post[0], "W", post[0].width, "H", post[0].height
-    print "RATIO", post[0].height / Image.open(inputs[0]).height
+    post.sortRatio()
+    post.filter()
 
-    # Output the first group to it's own image.
-    im = Image.new("RGBA", (post[0].width, post[0].height))
+    for p in post.generator():
+        print p
+
+    f = post.first()
+    print f
+
+    # for group in post:  # Post the groups to the outimage.
+    #     for p in group.pixels:
+    #         imdata[p[0], p[1]] = m.processor.pixels[p]
+
+    #Output the first group to it's own image.
+    im = Image.new("RGBA", (f.width, f.height))
     imdata = im.load()
 
-    for p in post[0].pixels:
-        imdata[p[0]-post[0].x[0], p[1]-post[0].y[0]] = m.processor.pixels[p]
+    for pixel in f.generator():
+        imdata[pixel[0]-f.x[0], pixel[1]-f.y[0]] = m.processor.pixels[pixel]
 
     im.show()
     im.save('Output/Only Pixels.png')

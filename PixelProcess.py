@@ -74,7 +74,7 @@ class ExtractPixelRemote(PixelRemote):
 
     def getGroupedPixels(self):
 
-        groups = []
+        groups = GroupContainer()
         processed = []
 
         for point in self.pixels:
@@ -94,25 +94,68 @@ class ExtractPixelRemote(PixelRemote):
 
                 explore.extend([n for n in nearby if n not in subprocess and n not in explore and n in self.pixels])
             processed.extend(subprocess)
-            groups.append(PixelGroup(subprocess))
+            groups.add(PixelGroup(subprocess))
             # groups.append(subprocess)
         return groups
+
+class GroupContainer(object):
+
+    def __init__(self):
+        self.groups = []
+
+    def generator(self):
+        for group in self.groups:
+            yield group
+
+    def add(self, group):
+        self.groups.append(group)
+
+    def sortRatio(self, reverse=True):  # Normal is low value first.
+        self.groups = sorted(self.groups, key=lambda x: x.ratio, reverse=reverse)
+
+    def sortCount(self, reverse=True):  # Normal is low value first.
+        self.groups = sorted(self.groups, key=lambda x: x.count, reverse=reverse)
+
+    def filter(self):
+        print len(self.groups),
+        self.groups = [group for group in self.groups if self._filter(group)]
+        print len(self.groups)
+
+    def _filter(self, group):
+        return self._greaterThanOne(group)
+
+    def _greaterThanOne(self, group):
+        return group.height > 1 and group.width > 1
+
+
+    def first(self):
+        return self.groups[0]
+
+    def pop(self):
+        return self.groups.pop(0)
 
 
 class PixelGroup(object):
 
     def __str__(self):
-        return repr(self.x)+' '+repr(self.y)+' '+repr(self.height)+' '+repr(self.width)+' '+repr(self.ratio)+'%'
+        return 'x:' + repr(self.x) + ' ' + 'y:' + repr(self.y) + ' ' + 'height:' + \
+               repr(self.height) + ' ' + 'width:' + repr(self.width) + ' ' + repr(self.ratio) + '%'
 
     def __init__(self, groups):
         self.pixels = groups
+        self.count = len(self.pixels)
         self.x, self.y, self.height, self.width, self.ratio = self._size()
+
+    def generator(self):
+        for p in self.pixels:
+            yield p
 
     def _size(self):
 
-        if len(self.pixels) <= 1:
-            p = [self.pixels[0]]
-            return p, p, 1, 1, 100
+        if self.count <= 1:
+            x = [self.pixels[0][0], self.pixels[0][0]]
+            y = [self.pixels[0][1], self.pixels[0][1]]
+            return x, y, 1, 1, 100
 
         x = []
         y = []
