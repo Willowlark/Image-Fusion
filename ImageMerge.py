@@ -229,7 +229,7 @@ if __name__ == "__main__":
     m.processor = PixelProcess.ExtractPixelRemote()
     m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
     m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
-    m.processor.checkcmd.diffnum = 80
+    m.processor.checkcmd.diffnum = 120
 
     m.merge(inputs[0])
     m.merge(inputs[1])
@@ -237,7 +237,7 @@ if __name__ == "__main__":
 
     post = m.processor.getGroupedPixels()
 
-    post.sortRatio()
+    post.sortCount()
     post.filter()
 
     for p in post.generator():
@@ -251,14 +251,7 @@ if __name__ == "__main__":
     #         imdata[p[0], p[1]] = m.processor.pixels[p]
 
     #Output the first group to it's own image.
-    im = Image.new("RGBA", (f.width, f.height))
-    imdata = im.load()
-
-    for pixel in f.generator():
-        imdata[pixel[0]-f.x[0], pixel[1]-f.y[0]] = m.processor.pixels[pixel]
-
-    im.show()
-    im.save('Output/Only Pixels.png')
+    f.save('Output/Only Pixels.png', m.processor.pixels)
 
     m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
 

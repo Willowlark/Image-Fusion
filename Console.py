@@ -9,7 +9,7 @@ class Console(cmd.Cmd):
 
     def __init__(self, output):
         cmd.Cmd.__init__(self)
-        self.groups = []
+        self.groups = None
         self.m = ImageMerge.Merger(output)
         self.prompt = '> '
 
@@ -51,10 +51,23 @@ class Console(cmd.Cmd):
         """Set the remote to a basic one."""
         self.m.processor = PixelProcess.PixelRemote()
 
-    def do_showgroup(self, arg):
+    def do_gengroups(self, arg):
         if isinstance(self.m.processor, PixelProcess.ExtractPixelRemote) \
           and self.m.processor.pixels is not None:
             self.groups = self.m.processor.getGroupedPixels()
+    def do_showgroups(self, arg):
+        if self.groups:
+           for group in self.groups.generator():
+               print group
+    def do_filtergroups(self, arg):
+        if self.groups: self.groups.filter()
+    def do_countsortgroups(self, arg):
+        if self.groups: self.groups.sortCount()
+    def do_ratiosortgroups(self, arg):
+        if self.groups: self.groups.sortRatio()
+    def do_savefirstgroup(self, path):
+        if not path: print 'Specify the save path.'
+        if self.groups and path: self.groups.first().save(path, self.m.processor.pixels)
 
     def do_detect(self, images):
         """Detect people in any number of images."""
