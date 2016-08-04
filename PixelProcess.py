@@ -103,6 +103,10 @@ class GroupContainer(object):
     def __init__(self):
         self.groups = []
 
+    def generator(self):
+        for group in self.groups:
+            yield group
+
     def add(self, group):
         self.groups.append(group)
 
@@ -111,6 +115,18 @@ class GroupContainer(object):
 
     def sortCount(self, reverse=True):  # Normal is low value first.
         self.groups = sorted(self.groups, key=lambda x: x.count, reverse=reverse)
+
+    def filter(self):
+        print len(self.groups),
+        self.groups = [group for group in self.groups if self._filter(group)]
+        print len(self.groups)
+
+    def _filter(self, group):
+        return self._greaterThanOne(group)
+
+    def _greaterThanOne(self, group):
+        return group.height > 1 and group.width > 1
+
 
     def first(self):
         return self.groups[0]

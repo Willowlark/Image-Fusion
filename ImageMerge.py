@@ -152,7 +152,6 @@ class Merger:
         self.processor.comparedata = compareimage.load()
 
         counter = 0
-        print self.outimage.size
         for y in range(self.outimage.size[1]):
             for x in range(self.outimage.size[0]):
                 counter += self.processor.run(x, y, x, y)
@@ -238,6 +237,10 @@ if __name__ == "__main__":
     post = m.processor.getGroupedPixels()
 
     post.sortRatio()
+    post.filter()
+
+    for p in post.generator():
+        print p
 
     f = post.first()
     print f
