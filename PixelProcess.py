@@ -1,3 +1,5 @@
+from PIL import Image
+
 class PixelCommand(object):
 
     def __init__(self):
@@ -117,9 +119,7 @@ class GroupContainer(object):
         self.groups = sorted(self.groups, key=lambda x: x.count, reverse=reverse)
 
     def filter(self):
-        print len(self.groups),
         self.groups = [group for group in self.groups if self._filter(group)]
-        print len(self.groups)
 
     def _filter(self, group):
         return self._greaterThanOne(group)
@@ -172,3 +172,13 @@ class PixelGroup(object):
         ratio = int((len(self.pixels) / float(w*h))*100)
 
         return x, y, h, w, ratio
+
+    def save(self, file, pixelDict):
+        im = Image.new("RGBA", (self.width, self.height))
+        imdata = im.load()
+
+        for pixel in self.generator():
+            imdata[pixel[0]-self.x[0], pixel[1]-self.y[0]] = pixelDict[pixel]
+
+        im.show()
+        im.save(file)
