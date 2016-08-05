@@ -1,9 +1,15 @@
 import cv2, sys, os
 import numpy as np
+import PIL
 from matplotlib import pyplot as plt
 from PIL import Image, ImageFilter, ImageSequence
 import images2gif
 from pprint import pprint
+from Tkinter import *
+from gif_player import gifPlayer
+import pyglet
+
+#https://pypi.python.org/pypi/images2gif
 
 # image = Image.open('Input/Two Infrared test.png')
 # image = image.filter(ImageFilter.FIND_EDGES)
@@ -25,6 +31,7 @@ from pprint import pprint
 
 if __name__ == '__main__' :
 
+    cur_dir = os.path.dirname(os.path.realpath(__file__))
     # img = Image.open('Input/IMG_0993.jpg')
     # img.save('Input/IMG_0993.png')
     #
@@ -48,27 +55,37 @@ if __name__ == '__main__' :
     # Warp source image to destination based on homography
     im_out = cv2.warpPerspective(im_src, h, (im_dst.shape[1],im_dst.shape[0]))
 
-    # Display images
-    # cv2.imshow("Source Image", im_src)
-    # cv2.imshow("Destination Image", im_dst)
-    cv2.imshow("Warped Source Image", im_out)
+    cv2.imwrite('gif_test/frame2.png', im_out)
 
-    cur_dir = os.path.dirname(os.path.realpath(__file__))
 
-    cv2.waitKey(0)
 
-    cv2.imwrite('Output/frame2.png', im_out)
+    im_dst = cv2.imread('Input/IMG_0991.png')
+    # Four corners of the book in destination image.
+    pts_dst = np.array([[116, 155], [116, 125], [179, 155], [179, 125]])
+    # Calculate Homography
+    h, status = cv2.findHomography(pts_src, pts_dst)
+    # Warp source image to destination based on homography
+    im_out = cv2.warpPerspective(im_src, h, (im_dst.shape[1], im_dst.shape[0]))
 
-    file_names = sorted(('Output/' + fn for fn in os.listdir('C:\Users\Bob S\PycharmProjects\Image-Fusion\Output') if fn.endswith('.png')))
+    cv2.imwrite('gif_test/frame3.png', im_out)
+
+
+    frames = []
+
+    file_names = sorted(('gif_test/' + fn for fn in os.listdir('C:\Users\Bob S\PycharmProjects\Image-Fusion\gif_test') if fn.endswith('.png')))
     pprint(file_names)
 
     cv2.waitKey(0)
 
-    images = [Image.open(fn) for fn in file_names]
+    images = [PIL.Image.open(fn) for fn in file_names]
 
-    # images.extend(reversed(images)) #infinit loop will go backwards and forwards.
+    filename = 'gif_test/my_gif.GIF'
+    images2gif.writeGif(filename, images, duration=0.5)
 
-    filename = 'Output/my_gif.GIF'
-    images2gif.writeGif(filename, images, duration=0.2)
+    root = Tk()
+    anim = gifPlayer(root, 'gif_test/my_gif.gif')
+    anim.pack()
+    anim.run(root)
 
-    cv2.waitKey(0)
+
+
