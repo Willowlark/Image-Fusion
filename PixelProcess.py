@@ -20,11 +20,6 @@ class TakeSecondCommand(PixelCommand):
     def execute(self, p1, p2):
         return p2
 
-class TakeFirstCommand(PixelCommand):
-
-    def execute(self, p1, p2):
-        return p1
-
 
 class ColorDiffCommand(PixelCommand):
 
@@ -37,18 +32,6 @@ class ColorDiffCommand(PixelCommand):
         return abs(p1[0] - p2[0]) > self.diffnum \
            or abs(p1[1] - p2[1]) > self.diffnum \
            or abs(p1[2] - p2[2]) > self.diffnum
-
-class ColorLessDiffCommand(PixelCommand):
-
-    diffnum = 20
-
-    def __init__(self):
-        pass
-
-    def execute(self, p1, p2):
-        return abs(p1[0] - p2[0]) < self.diffnum \
-           or abs(p1[1] - p2[1]) < self.diffnum \
-           or abs(p1[2] - p2[2]) < self.diffnum
 
 
 class PixelRemote(object):
