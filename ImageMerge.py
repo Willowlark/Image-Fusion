@@ -221,15 +221,53 @@ class Merger:
         print "Different Pixels:", counter, repr(round((counter/360000.)*100,2)) + '%', " Same Pixels:", \
             360000-counter, repr(round(((360000-counter)/360000.)*100,2)) + '%'+ '\n'
 
+class Stitcher(Merger):
+
+    def checkAndAct(self, img):
+        compareimage = Image.open(img)
+        self.processor.comparedata = compareimage.load()
+
+        ret = (0, 0)
+        counter = [0, 0, 0, 0] # Top, Right, Bottom, Left
+        for x, y in self.genPoints(*self.outimage.size):
+            if x == None:
+                top = sorted(counter, reverse=True).pop(0)
+                if top > ret[0]: ret = (top, counter.index(top))
+                counter = [0,0,0,0]
+                continue
+            opposite = (x, 0), (compareimage.size[0]-1, y), (x, compareimage.size[1]-1), (0, y)
+            print (x,y), opposite
+            counter[0] += self.processor.run(x, y, opposite[0][0], opposite[0][1])
+            counter[1] += self.processor.run(x, y, opposite[1][0], opposite[1][1])
+            counter[2] += self.processor.run(x, y, opposite[2][0], opposite[2][1])
+            counter[3] += self.processor.run(x, y, opposite[3][0], opposite[3][1])
+
+        return ret
+
+    def genPoints(self, xlen, ylen):
+        for x in range(xlen): #Top Side
+            yield (x, 0)
+        yield None, None
+        for y in range(ylen): # Right Side
+            yield (xlen-1, y)
+        yield None, None
+        for x in range(xlen): # Bottom Side
+            yield (x, ylen-1)
+        yield None, None
+        for y in range(ylen): # Right Side
+            yield (0, y)
+
+    def stitch(self, img):
+        values = self.testMerge(img)
 
 if __name__ == "__main__":
     debug = 0
-    inputs = ['Input/One Visual.jpg', 'Input/One Infrared.jpg']
-    m = Merger('Output/ImF.png')
+    inputs = ['Input/One Visual.jpg', 'Input/One Visual.jpg']
+    m = Stitcher('Output/ImF.png')
 
-    m.processor = PixelProcess.ExtractPixelRemote()
-    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
-    m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+    m.processor = PixelProcess.PixelRemote()
+    m.processor.setActorCommand(PixelProcess.takeFirstCommand())
+    m.processor.setCheckCommand(PixelProcess.ColorLessDiffCommand())
 
     m.merge(inputs[0])
     m.merge(inputs[1])
