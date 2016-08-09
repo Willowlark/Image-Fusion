@@ -22,7 +22,7 @@ def draw_detections(img, rects, thickness = 1):
         cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), (0, 255, 0), thickness)
 
 
-if __name__ == '__main__':
+def detect(inputs):
     import sys
     from glob import glob
     import itertools as it
@@ -32,7 +32,8 @@ if __name__ == '__main__':
     hog = cv2.HOGDescriptor()
     hog.setSVMDetector( cv2.HOGDescriptor_getDefaultPeopleDetector() )
 
-    for fn in it.chain(*map(glob, sys.argv[1:])):
+    # for fn in it.chain(*map(glob, sys.argv[1:])):
+    for fn in inputs:
         print fn, ' - ',
         try:
             img = cv2.imread(fn)

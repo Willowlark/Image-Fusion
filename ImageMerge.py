@@ -152,7 +152,6 @@ class Merger:
         self.processor.comparedata = compareimage.load()
 
         counter = 0
-        print self.outimage.size
         for y in range(self.outimage.size[1]):
             for x in range(self.outimage.size[0]):
                 counter += self.processor.run(x, y, x, y)
@@ -262,12 +261,13 @@ class Stitcher(Merger):
 
 if __name__ == "__main__":
     debug = 0
-    inputs = ['Input/One Visual.jpg', 'Input/One Visual.jpg']
-    m = Stitcher('Output/ImF.png')
+    inputs = ['Input/One Visual.jpg', 'Input/One Infrared.jpg']
+    m = Merger('Output/ImFuse.jpg')
 
-    m.processor = PixelProcess.PixelRemote()
-    m.processor.setActorCommand(PixelProcess.takeFirstCommand())
-    m.processor.setCheckCommand(PixelProcess.ColorLessDiffCommand())
+    m.processor = PixelProcess.ExtractPixelRemote()
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+    m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+    m.processor.checkcmd.diffnum = 120
 
     m.merge(inputs[0])
     m.merge(inputs[1])
@@ -275,26 +275,24 @@ if __name__ == "__main__":
 
     post = m.processor.getGroupedPixels()
 
-    print post[0]
+    post.sortCount()
+    post.filter()
+
+    for p in post.generator():
+        print p
+
+    f = post.first()
+    print f
 
     # for group in post:  # Post the groups to the outimage.
     #     for p in group.pixels:
     #         imdata[p[0], p[1]] = m.processor.pixels[p]
 
     #Output the first group to it's own image.
-    im = Image.new("RGBA", (post[0].width, post[0].height))
-    imdata = im.load()
-
-    for p in post[0].pixels:
-        imdata[p[0]-post[0].x[0], p[1]-post[0].y[0]] = m.processor.pixels[p]
-
-    im.show()
-    im.save('Output/Only Pixels.png')
-
+    f.save('Output/Only Pixels.png', m.processor.pixels)
 
     m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
 
-    m.processor.checkcmd.diffnum = 50
-    m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+    # m.exportMerge('Output/DifferenceFile.jpg', 'Output/One Fused Provided.jpg')
 
     m.save()
