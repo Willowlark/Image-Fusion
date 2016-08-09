@@ -1,38 +1,13 @@
-import cv2, sys, os
+import cv2, os
 import numpy as np
 import PIL
-from matplotlib import pyplot as plt
-from PIL import Image, ImageFilter, ImageFont, ImageDraw
+from PIL import Image, ImageFont, ImageDraw
 import images2gif
 from pprint import pprint
 from Tkinter import *
 from gif_player import gifPlayer
 import ntpath
-from rotation_script import autorotate
-import base64
-import Tkinter
 import ImageMerge, PixelProcess
-
-
-#https://pypi.python.org/pypi/images2gif
-
-# image = Image.open('Input/Two Infrared test.png')
-# image = image.filter(ImageFilter.FIND_EDGES)
-# image.show()
-#
-# image = Image.open('Input/Two Crop test.png')
-# image = image.filter(ImageFilter.FIND_EDGES)
-# image.show()
-
-# img = cv2.imread('Input/Two Infrared.jpg')
-# edges = cv2.Canny(img,50,200,apertureSize = 3)
-#
-# plt.subplot(121),plt.imshow(img,cmap = 'gray')
-# plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-# plt.subplot(122),plt.imshow(edges,cmap = 'gray')
-# plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
-#
-# plt.show()
 
 def homograhpy(dest_index, base_imgs, test_imgs, save_first_frame=None):
 
@@ -81,10 +56,6 @@ def homograhpy(dest_index, base_imgs, test_imgs, save_first_frame=None):
     filename = 'gif_test/my_gif.GIF'
     images2gif.writeGif(filename, images, duration=0.5)
 
-    root = Tk()
-    anim = gifPlayer(root, 'gif_test/my_gif.gif')
-    anim.pack()
-    anim.run(root)
     return
 
 def obtain_dimensions(base_file, obj_file):
@@ -144,13 +115,22 @@ def apply_image_merge(base_file, obj_file):
 def apply_names(direc):
     for fn in os.listdir(direc):
         if fn.endswith('.png'):
-            text_on_image(direc + '\\' + fn)
+            text_on_image(os.path.join(direc, fn))
 
 def clear_frames(direc):
+    # ex
+    # clear_frames(frames_dir)
+
     for f in os.listdir(direc):
         os.remove(os.path.join(direc, f))
 
-def resize(file, new_w, new_h):
+def resize_by_image(destination, source):
+    resize_by_size(destination, *PIL.Image.open(source).size)
+
+def resize_by_size(file, new_w, new_h):
+    # ex
+    # resize_by_size(os.path.join(inp_dir, 'IMG_1004.png'), PIL.Image.open(os.path.join(inp_dir, 'IMG_0993.png')).size[0], PIL.Image.open(os.path.join(inp_dir, 'IMG_0993.png')).size[1])
+
     img = PIL.Image.open(file)
     img = img.resize((new_w, new_h), PIL.Image.ANTIALIAS)
     img.save(file)
@@ -203,16 +183,14 @@ def debug_main():
     gif_file = os.path.join(os.path.dirname(os.path.realpath(frames_dir)), 'my_gif.GIF')
     images2gif.writeGif(gif_file, images, duration=0.5)
 
-    root = Tk()
-    anim = gifPlayer(root, gif_file)
-    anim.pack()
-    anim.run(root)
+    return
 
 if __name__ == '__main__' :
 
+    # applicable run-me
     cur_dir = os.path.dirname(os.path.realpath(__file__))
-    frames_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'gif_test', 'frames')
-    inp_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input')
+    frames_dir = os.path.join(cur_dir, 'gif_test', 'frames')
+    inp_dir = os.path.join(cur_dir, 'Input')
 
     bases = [os.path.join(inp_dir, 'IMG_1022.jpg'), os.path.join(inp_dir, 'IMG_1024.jpg'), os.path.join(inp_dir, 'IMG_1026.jpg')]
     tests = [os.path.join(inp_dir, 'IMG_1021.jpg'), os.path.join(inp_dir, 'IMG_1023.jpg'), os.path.join(inp_dir, 'IMG_1025.jpg')]
@@ -220,8 +198,7 @@ if __name__ == '__main__' :
 
     homograhpy(dest_index=1, base_imgs=bases, test_imgs=tests)
 
-    # clear_frames(frames_dir)
-
-    # resize(os.path.join(inp_dir, 'IMG_1004.png'), PIL.Image.open(os.path.join(inp_dir, 'IMG_0993.png')).size[0], PIL.Image.open(os.path.join(inp_dir, 'IMG_0993.png')).size[1])
-
-
+    root = Tk()
+    anim = gifPlayer(root, 'gif_test/my_gif.gif')
+    anim.pack()
+    anim.run(root)
