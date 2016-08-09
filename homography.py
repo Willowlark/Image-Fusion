@@ -11,6 +11,7 @@ import ntpath
 from rotation_script import autorotate
 import base64
 import Tkinter
+import ImageMerge, PixelProcess
 
 
 #https://pypi.python.org/pypi/images2gif
@@ -82,6 +83,47 @@ def homograhpy(base_img, clear_dir=None, save_first_frame=None, *test_imgs):
     anim.run(root)
     return
 
+def apply_image_merge(base_file, obj_file):
+    im = PIL.Image.open(obj_file)
+    img_width, img_height = im.size
+
+    inputs = [base_file, obj_file]
+    m = ImageMerge.Merger('Output/ImF.png')
+
+    m.processor = PixelProcess.ExtractPixelRemote()
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+    m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+
+    m.merge(inputs[0])
+    m.merge(inputs[1])
+    print "Number of pixels recorded.", len(m.processor.pixels)
+
+    post = m.processor.getGroupedPixels()
+
+    print "object @", post[0]
+    ratio = post[0].height / PIL.Image.open(inputs[0]).height
+    print PIL.Image.open(inputs[0]).height
+    print "pct of height", ratio
+
+    im = PIL.Image.new("RGBA", (post[0].width, post[0].height))
+    imdata = im.load()
+
+    for p in post[0].pixels:
+        imdata[p[0] - post[0].x[0], p[1] - post[0].y[0]] = m.processor.pixels[p]
+
+    # im.show()
+    im.save('Output/Only Pixels.png')
+
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+
+    m.processor.checkcmd.diffnum = 50
+
+    m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+
+    m.save()
+
+    print "obj height px", post[0].height, "\nimage height px", img_height
+
 def apply_names(direc):
     for fn in os.listdir(direc):
         if fn.endswith('.png'):
@@ -98,6 +140,9 @@ if __name__ == '__main__' :
 
     cur_dir = os.path.dirname(os.path.realpath(__file__))
     frames_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'gif_test', 'frames')
+    inp_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input')
+
+    apply_image_merge(os.path.join(inp_dir, 'IMG_0991.jpg'), os.path.join(inp_dir, 'IMG_0993.jpg'))
 
     im_dst = cv2.imread('Input/IMG_0993.png')
     pts_dst = np.array([[179, 196], [179, 205], [198, 196], [198, 205]])
