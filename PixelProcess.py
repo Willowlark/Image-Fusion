@@ -20,6 +20,12 @@ class TakeSecondCommand(PixelCommand):
     def execute(self, p1, p2):
         return p2
 
+class TakeNonEmptySecondCommand(PixelCommand):
+
+    def execute(self, p1, p2):
+        if p2 == (0, 0, 0): return p1
+        return p2
+
 
 class ColorDiffCommand(PixelCommand):
 

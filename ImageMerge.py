@@ -146,6 +146,7 @@ class Merger:
         smim = Image.open(smallImage)
         smdata = smim.load()
         xlen, ylen = smim.size
+        result = None
 
         # Create Sides, and generate Hashes of them.
         sides = [[],[],[],[]]
@@ -162,6 +163,9 @@ class Merger:
         for y in range(self.outimage.size[1]):
             row = []
             for x in range(self.outimage.size[0]):
+                if result is not None:
+                    break
+
                 if (x + xlen) <= self.outimage.size[0]: #Top and Bottom check.
                     while len(row) != xlen: #get the row to match the size.
                         if len(row) > xlen:
@@ -177,7 +181,7 @@ class Merger:
                             if not self._tupleSub(sm, lg):
                                 flag = 0
                                 break
-                        if flag: return x, y, s
+                        if flag: result =  x, y, s
                 if (x + ylen) <= self.outimage.size[0]:
                     while len(row) != ylen: #get the row to match the size.
                         if len(row) > ylen:
@@ -193,9 +197,20 @@ class Merger:
                             if not self._tupleSub(sm, lg):
                                 flag = 0
                                 break
-                        if flag: return x, y, s
-
+                        if flag: result =  x, y, s
                 del row[0]
+        if result is not None:
+            im = Image.new("RGBA", (self.outimage.size[0], self.outimage.size[0]))
+            imdata = im.load()
+
+            for y in range(smim.size[1]):
+                for x in range(smim.size[0]):
+                    newx = result[0] + x
+                    newy = result[1] + y
+                    imdata[newx, newy] = smdata[x,y]
+
+            im.save(outfile)
+        self.exportMerge(outfile, outfile)
 
     def checkAndAct(self, img):
         """
@@ -285,16 +300,16 @@ class Merger:
 
 if __name__ == "__main__":
     debug = 0
-    inputs = ['Input/Camera 1.jpg', 'Input\Camera cropend.jpg']
+    inputs = ['Input/Camera 1.jpg', 'Input\Camera crop.jpg']
     m = Merger('Output/ImFuse.jpg')
 
-    # m.processor = PixelProcess.ExtractPixelRemote()
-    # m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
-    # m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
-    # m.processor.checkcmd.diffnum = 120
-    #
+    m.processor = PixelProcess.ExtractPixelRemote()
+    m.processor.setActorCommand(PixelProcess.TakeNonEmptySecondCommand())
+    m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+    m.processor.checkcmd.diffnum = 0
+
     m.merge(inputs[0])
-    print m.cropFind('foo', inputs[1])
+    print m.cropFind('foo.jpg', inputs[1])
     # print "Number of pixels recorded.", len(m.processor.pixels)
     #
     # post = m.processor.getGroupedPixels()
