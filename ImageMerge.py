@@ -135,6 +135,13 @@ class Merger:
         self.outfile = outfile
         self.merge(*images)
 
+    def _tupleSub(self, t, tt):
+        for one, two in zip(t, tt):
+            if abs(one - two) > 5:
+                return False
+        return True
+
+
     def hashMerge(self, outfile, smallImage):
         smim = Image.open(smallImage)
         smdata = smim.load()
@@ -142,29 +149,53 @@ class Merger:
 
         # Create Sides, and generate Hashes of them.
         sides = [[],[],[],[]]
-        hashes = []
         for x in range(xlen): #Top Side, Bottom Side
-            sides[0].append((x, 0))
-            sides[2].append((x, ylen-1))
+           sides[0].append(smdata[(x, 0)])
+           sides[2].append(smdata[((xlen-1)-x, ylen-1)])
         for y in range(ylen): # Right Side, Left Side
-            sides[1].append((xlen-1, y))
-            sides[3].append((0, y))
+           sides[1].append(smdata[(xlen-1, y)])
+           sides[3].append(smdata[(0, (ylen-1)-y)])
         for side in sides:
             side = tuple(side)
-            hashes.append(hash(side))
         sides = tuple(sides)
 
-        for y in self.outimage.size[1]:
-            for x in self.outimage.size[0]:
-                if (y + ylen) <= self.outimage.size[1] and (x + xlen) <= self.outimage.size[0]:
-                    pass
-                    #top and bottom
-                if (y + xlen) <= self.outimage.size[1] and (x + ylen) <= self.outimage.size[0]:
-                    pass
-                    #left and right
+        for y in range(self.outimage.size[1]):
+            row = []
+            for x in range(self.outimage.size[0]):
+                if (x + xlen) <= self.outimage.size[0]: #Top and Bottom check.
+                    while len(row) != xlen: #get the row to match the size.
+                        if len(row) > xlen:
+                            del row[-1]
+                        elif len(row) < xlen:
+                           row.append(self.processor.outdata[x+len(row),y])
+                    for s in range(0, 4, 2):
+                        # print row
+                        # print sides[s]
+                        # print sides[s] == row
+                        flag = 1
+                        for sm, lg in zip(sides[s], row):
+                            if not self._tupleSub(sm, lg):
+                                flag = 0
+                                break
+                        if flag: return x, y, s
+                if (x + ylen) <= self.outimage.size[0]:
+                    while len(row) != ylen: #get the row to match the size.
+                        if len(row) > ylen:
+                            del row[-1]
+                        elif len(row) < ylen:
+                           row.append(self.processor.outdata[x+len(row),y])
+                    for s in range(1, 4, 2):
+                        # print row
+                        # print sides[s]
+                        # print sides[s] == row
+                        flag = 1
+                        for sm, lg in zip(sides[s], row):
+                            if not self._tupleSub(sm, lg):
+                                flag = 0
+                                break
+                        if flag: return x, y, s
 
-
-
+                del row[0]
 
     def checkAndAct(self, img):
         """
@@ -254,7 +285,7 @@ class Merger:
 
 if __name__ == "__main__":
     debug = 0
-    inputs = ['Input/Camera 1.jpg', 'Output\Only Pixels.jpg']
+    inputs = ['Input/Camera 1.jpg', 'Input\Camera cropend.jpg']
     m = Merger('Output/ImFuse.jpg')
 
     # m.processor = PixelProcess.ExtractPixelRemote()
@@ -263,7 +294,7 @@ if __name__ == "__main__":
     # m.processor.checkcmd.diffnum = 120
     #
     m.merge(inputs[0])
-    m.hashMerge('foo', inputs[1])
+    print m.hashMerge('foo', inputs[1])
     # print "Number of pixels recorded.", len(m.processor.pixels)
     #
     # post = m.processor.getGroupedPixels()
