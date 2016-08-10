@@ -1,15 +1,11 @@
-import cv2, os
+import cv2, os, PIL, ntpath, ImageMerge, PixelProcess, images2gif
 import numpy as np
-import PIL
 from PIL import Image, ImageFont, ImageDraw
-import images2gif
 from pprint import pprint
 from Tkinter import *
 from gif_player import gifPlayer
-import ntpath
-import ImageMerge, PixelProcess
 
-def homograhpy(dest_index, base_imgs, test_imgs, save_first_frame=None):
+def homograhpy(dest_index, base_imgs, test_imgs, save_first_frame=False):
 
     args_count = 0
 
@@ -22,7 +18,7 @@ def homograhpy(dest_index, base_imgs, test_imgs, save_first_frame=None):
     h, status = cv2.findHomography(pts_dst, pts_dst)
     im_out = cv2.warpPerspective(im_dst, h, (im_dst.shape[1], im_dst.shape[0]))
 
-    if save_first_frame is not None:
+    if save_first_frame is True:
         cv2.imwrite(os.path.join(frames_dir, 'frame' + str(args_count) + '.png'), im_out)
 
     for index in xrange(0, len(base_imgs)):
@@ -51,15 +47,23 @@ def homograhpy(dest_index, base_imgs, test_imgs, save_first_frame=None):
     print 'frames:'
     pprint(file_names)
 
-    images = [PIL.Image.open(fn) for fn in file_names]
+    images = collect_frames(file_names)
 
     filename = 'gif_test/my_gif.GIF'
     images2gif.writeGif(filename, images, duration=0.5)
 
     return
 
+def collect_frames(file_names):
+
+    lis_forw = [PIL.Image.open(fn) for fn in file_names]
+    lis_remain = lis_forw[::-1][1:-1]
+
+    return lis_forw + lis_remain
+
+
 def obtain_dimensions(base_file, obj_file):
-    res = apply_image_merge(base_file, obj_file)
+    res = apply_image_merge(base_file, obj_file, verbose=False)
 
     # corners of object from merge
     top_right = [res[0][0], res[1][0]]
@@ -69,7 +73,7 @@ def obtain_dimensions(base_file, obj_file):
 
     return top_left, top_right, bottom_right, bottom_left
 
-def apply_image_merge(base_file, obj_file):
+def apply_image_merge(base_file, obj_file, verbose=False):
 
     inputs = [base_file, obj_file]
     m = ImageMerge.Merger('Output/ImF.png')
@@ -80,37 +84,38 @@ def apply_image_merge(base_file, obj_file):
 
     m.merge(inputs[0])
     m.merge(inputs[1])
-    print "Number of pixels recorded.", len(m.processor.pixels)
 
     post = m.processor.getGroupedPixels()
 
-    print "object @", post[0]
-    ratio = post[0].height / PIL.Image.open(inputs[0]).height
-    print PIL.Image.open(inputs[0]).height
-    print "pct of height", ratio
+    post.sortCount(reverse=True)
+    post.filter()
+    f = post.first()
 
-    im = PIL.Image.new("RGBA", (post[0].width, post[0].height))
-    imdata = im.load()
+    if verbose is True:
+        print "Number of pixels recorded.", len(m.processor.pixels)
 
-    for p in post[0].pixels:
-        imdata[p[0] - post[0].x[0], p[1] - post[0].y[0]] = m.processor.pixels[p]
+        print "object @", f
+        ratio = f.height / PIL.Image.open(inputs[0]).height
+        print PIL.Image.open(inputs[0]).height
+        print "pct of height", ratio
 
-    # im.show()
-    im.save('Output/Only Pixels.png')
+        im = PIL.Image.new("RGBA", (f.width, f.height))
+        imdata = im.load()
 
-    print 'res of imgs', inputs[0], inputs[1]
-    PIL.Image.open('Output/Only Pixels.png').show()
+        for p in f.pixels:
+            imdata[p[0] - f.x[0], p[1] - f.y[0]] = m.processor.pixels[p]
 
-    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+        im.show()
+        im.save('Output/Only Pixels.png')
 
-    m.processor.checkcmd.diffnum = 50
+        m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+        m.processor.checkcmd.diffnum = 50
+        m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+        m.save()
 
-    m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+        print 'merge finished, see Output folder for result images'
 
-    m.save()
-
-    ret = post[0]
-    return ret.x, ret.y, ret.width, ret.height
+    return f.x, f.y, f.width, f.height
 
 def apply_names(direc):
     for fn in os.listdir(direc):
@@ -143,6 +148,11 @@ def text_on_image(path):
     img.save(path)
 
 def debug_main():
+    """
+    To be removed after testing
+
+    :return:
+    """
 
     cur_dir = os.path.dirname(os.path.realpath(__file__))
     frames_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'gif_test', 'frames')
@@ -196,7 +206,9 @@ if __name__ == '__main__' :
     tests = [os.path.join(inp_dir, 'IMG_1021.jpg'), os.path.join(inp_dir, 'IMG_1023.jpg'), os.path.join(inp_dir, 'IMG_1025.jpg')]
     dest = (os.path.join(inp_dir, 'IMG_1024.jpg'), os.path.join(inp_dir, 'IMG_1023.jpg'))
 
-    homograhpy(dest_index=1, base_imgs=bases, test_imgs=tests)
+    clear_frames(frames_dir)
+
+    homograhpy(dest_index=1, base_imgs=bases, test_imgs=tests, save_first_frame=False)
 
     root = Tk()
     anim = gifPlayer(root, 'gif_test/my_gif.gif')

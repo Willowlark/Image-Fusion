@@ -12,7 +12,7 @@ import ImageMerge
 import PixelProcess
 
 # EXAMPLE ARGS
-# 1.82 "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
+# 1.82 T "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
 #
 # INDEPENDENT CALL EXAMPLE:
 # method = Primary(1.82, base.jpg, input.jpg)
@@ -31,7 +31,7 @@ class Solution:
     The final method, investigates the tags for a special 'subject distance' tag that assumes the accurate region of focus and returns that distance fom the camera
     """
 
-    def __init__(self, base_file, obj_file, known_height):
+    def __init__(self, base_file=None, obj_file=None, known_height=None):
         self.base_file = base_file
         self.obj_file = obj_file
         self.height_object_in_question = known_height
@@ -41,6 +41,12 @@ class Solution:
         with open(os.path.join(directory, 'json', 'cameras.json'), 'r') as data_file:
             data = json.load(data_file)
             self.camera_dict = data
+
+    def config(self, base_file, obj_file, known_height):
+        self.base_file = base_file
+        self.obj_file = obj_file
+        self.height_object_in_question = known_height
+        return self
 
     def get_object_height_px(self, base_file, obj_file):
         """
@@ -65,17 +71,20 @@ class Solution:
         print "Number of pixels recorded.", len(m.processor.pixels)
 
         post = m.processor.getGroupedPixels()
+        post.sortCount(reverse=True)
+        post.filter()
+        f = post.first()
 
-        print "object @", post[0]
-        ratio = post[0].height / Image.open(inputs[0]).height
+        print "object @", f
+        ratio = f.height / Image.open(inputs[0]).height
         print Image.open(inputs[0]).height
         print "pct of height", ratio
 
-        im = Image.new("RGBA", (post[0].width, post[0].height))
+        im = Image.new("RGBA", (f.width, f.height))
         imdata = im.load()
 
-        for p in post[0].pixels:
-            imdata[p[0] - post[0].x[0], p[1] - post[0].y[0]] = m.processor.pixels[p]
+        for p in f.pixels:
+            imdata[p[0] - f.x[0], p[1] - f.y[0]] = m.processor.pixels[p]
 
         # im.show()
         im.save('Output/Only Pixels.png')
@@ -84,12 +93,12 @@ class Solution:
 
         m.processor.checkcmd.diffnum = 50
 
-        m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
+        # m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
 
         m.save()
 
-        print "obj height px", post[0].height, "\nimage height px", img_height
-        return (post[0].height, img_height)
+        print "obj height px", f.height, "\nimage height px", img_height
+        return (f.height, img_height)
 
     def get_exif(self, path):
         """
@@ -151,7 +160,7 @@ class Primary(Solution):
     Requires config file (calib_info) to be established for accurate functionality
     """
 
-    def __init__(self, base_file, obj_file, known_height):
+    def __init__(self, base_file=None, obj_file=None, known_height=None):
         Solution.__init__(self, base_file, obj_file, known_height)
 
         with open(os.path.join(directory, 'json', 'calib_info.json'), 'r') as fp:
@@ -180,7 +189,7 @@ class Secondary(Solution):
     The described secondary method of finding object distance
     Requires only proper file format, with exif tags, to run appropriately
     """
-    def __init__(self, base_file, obj_file, known_height):
+    def __init__(self, base_file=None, obj_file=None, known_height=None):
         Solution.__init__(self, base_file, obj_file, known_height)
     
     def find_distance(self):
@@ -212,7 +221,7 @@ class Tertiary(Solution):
     The penultimate method of finding object distance
     Requires only proper file format, with exif tags, to run appropriately
     """
-    def __init__(self, base_file, obj_file, known_height):
+    def __init__(self, base_file=None, obj_file=None, known_height=None):
         Solution.__init__(self, base_file, obj_file, known_height)
     
     def find_distance(self):
@@ -245,7 +254,7 @@ class Quaternary(Solution):
     The last method of finding object distance, characterized by unreliability
     Requires proper file format, with exif tags, as well as exif tag 'SubjectDistance' and assumes the object is in field of focus
     """
-    def __init__(self, base_file, obj_file, known_height):
+    def __init__(self, base_file=None, obj_file=None, known_height=None):
         Solution.__init__(self, base_file, obj_file, known_height)
     
     def find_distance(self):
@@ -275,16 +284,18 @@ class Macro:
             ret.append((str(c.__class__.__name__), os.path.split(c.obj_file)[1], c.find_distance()))
         return ret
 
-def main(known_height, base_file, infiles):
+def main(known_height, base_file, infiles, method_flag):
 
     # run me
 
     # df = Macro(Primary(infile, known_height), Secondary(infile, known_height), Tertiary(infile, known_height))
     # df = Macro(Primary(os.path.join(directory, 'Input', 'IMG_onehalf.jpg'), known_height))
 
+    configs = {'P':Primary, 'S':Secondary, 'T':Tertiary, 'Q':Quaternary}
+
     df = Macro()
-    for file in infiles:
-        df.add(Secondary(base_file, file, known_height))
+    for obj_file in infiles:
+        df.add(configs[method_flag.upper()](known_height=known_height, obj_file=obj_file, base_file=base_file))
 
     results = df.run()
     return results
@@ -294,8 +305,8 @@ if __name__ == '__main__':
 
     directory = os.path.dirname(os.path.realpath(__file__))
 
-    infiles = sys.argv[3:]                                  # argv[2:] = all of the files for the script to be run over
-    res = main(float(sys.argv[1]), sys.argv[2], infiles)    # argv[1] =  0.124, height of object in meters, argv[2] = base image file pathname (absolute)
+    infiles = sys.argv[4:]                                  # argv[3:] = all of the files for the script to be run over
+    res = main(known_height=float(sys.argv[1]), base_file=sys.argv[3], method_flag=sys.argv[2], infiles=infiles)    # argv[1] =  0.124, height of object in meters, argv[3] = base image file pathname (absolute)
     pprint(res)
 
     sys.exit(0)

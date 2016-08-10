@@ -200,7 +200,7 @@ def main(subimg, totimg):
         loc = find_loc_double_check(*entry)
         if loc:
             print "\n", entry[1].info, "Found in", entry[0].info
-            res = place_image(subimg, entry[1], entry[0], loc, highlight=False)
+            res = place_image(subimg, entry[1], entry[0], loc, highlight=True)
             return res
             # break
             # raw_input("Press Enter to continue...")
