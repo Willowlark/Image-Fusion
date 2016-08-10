@@ -43,6 +43,8 @@ class Console(cmd.Cmd):
         """Set the check and act commands to empty commands."""
         self.m.processor.setActorCommand(PixelProcess.PixelCommand())
         self.m.processor.setCheckCommand(PixelProcess.PixelCommand())
+    def do_takenonemptysecond(self):
+        self.m.processor.setActorCommand(PixelProcess.TakeNonEmptySecondCommand())
 
     def do_extractremote(self, arg):
         """Set the processor's remote to record changed pixels."""

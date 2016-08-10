@@ -310,28 +310,28 @@ if __name__ == "__main__":
 
     m.merge(inputs[0])
     print m.cropFind('foo.jpg', inputs[1])
-    # print "Number of pixels recorded.", len(m.processor.pixels)
-    #
-    # post = m.processor.getGroupedPixels()
-    #
-    # post.sortCount()
-    # post.filter()
-    #
-    # for p in post.generator():
-    #     print p
-    #
-    # f = post.first()
-    # print f
-    #
-    # # for group in post:  # Post the groups to the outimage.
-    # #     for p in group.pixels:
-    # #         imdata[p[0], p[1]] = m.processor.pixels[p]
-    #
-    # #Output the first group to it's own image.
-    # f.save('Output/Only Pixels.png', m.processor.pixels)
-    #
-    # m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
-    #
-    # # m.exportMerge('Output/DifferenceFile.jpg', 'Output/One Fused Provided.jpg')
-    #
-    # m.save()
+    print "Number of pixels recorded.", len(m.processor.pixels)
+
+    post = m.processor.getGroupedPixels()
+
+    post.sortCount()
+    post.filter()
+
+    for p in post.generator():
+        print p
+
+    f = post.first()
+    print f
+
+    # for group in post:  # Post the groups to the outimage.
+    #     for p in group.pixels:
+    #         imdata[p[0], p[1]] = m.processor.pixels[p]
+
+    #Output the first group to it's own image.
+    f.save('Output/Only Pixels.png', m.processor.pixels)
+
+    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+
+    # m.exportMerge('Output/DifferenceFile.jpg', 'Output/One Fused Provided.jpg')
+
+    m.save()
