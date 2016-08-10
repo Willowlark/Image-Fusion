@@ -10,6 +10,7 @@ import warnings
 import json
 import ImageMerge
 import PixelProcess
+import Console
 
 # EXAMPLE ARGS
 # 1.82 "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
@@ -53,43 +54,26 @@ class Solution:
         im = Image.open(obj_file)
         img_width, img_height = im.size
 
-        inputs = [base_file, obj_file]
-        m = ImageMerge.Merger('Output/ImF.png')
+        consolas = Console('Output/ImF.png')
+        consolas.do_extractremote()
+        consolas.do_redhighlight()
+        consolas.do_colordiff(120)
 
-        m.processor = PixelProcess.ExtractPixelRemote()
-        m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
-        m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+        consolas.do_merge(base_file)
+        consolas.do_merge(obj_file)
 
-        m.merge(inputs[0])
-        m.merge(inputs[1])
-        print "Number of pixels recorded.", len(m.processor.pixels)
+        consolas.do_gengroups()
+        consolas.do_countsortgroups()
+        first = consolas.groups[0]
 
-        post = m.processor.getGroupedPixels()
-
-        print "object @", post[0]
-        ratio = post[0].height / Image.open(inputs[0]).height
-        print Image.open(inputs[0]).height
+        print "object @", first
+        ratio = first.height / Image.open(base_file).height
+        print Image.open(base_file).height
         print "pct of height", ratio
 
-        im = Image.new("RGBA", (post[0].width, post[0].height))
-        imdata = im.load()
 
-        for p in post[0].pixels:
-            imdata[p[0] - post[0].x[0], p[1] - post[0].y[0]] = m.processor.pixels[p]
-
-        # im.show()
-        im.save('Output/Only Pixels.png')
-
-        m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
-
-        m.processor.checkcmd.diffnum = 50
-
-        m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
-
-        m.save()
-
-        print "obj height px", post[0].height, "\nimage height px", img_height
-        return (post[0].height, img_height)
+        print "obj height px", first.height, "\nimage height px", img_height
+        return (first.height, img_height)
 
     def get_exif(self, path):
         """
