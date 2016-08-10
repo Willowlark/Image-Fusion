@@ -165,6 +165,7 @@ class Merger:
 
 
 
+
     def checkAndAct(self, img):
         """
         `Author`: Bill Clark
