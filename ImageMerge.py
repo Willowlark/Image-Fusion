@@ -135,6 +135,83 @@ class Merger:
         self.outfile = outfile
         self.merge(*images)
 
+    def _tupleSub(self, t, tt):
+        for one, two in zip(t, tt):
+            if abs(one - two) > 5:
+                return False
+        return True
+
+
+    def cropFind(self, outfile, smallImage):
+        smim = Image.open(smallImage)
+        smdata = smim.load()
+        xlen, ylen = smim.size
+        result = None
+
+        # Create Sides, and generate Hashes of them.
+        sides = [[],[],[],[]]
+        for x in range(xlen): #Top Side, Bottom Side
+           sides[0].append(smdata[(x, 0)])
+           sides[2].append(smdata[((xlen-1)-x, ylen-1)])
+        for y in range(ylen): # Right Side, Left Side
+           sides[1].append(smdata[(xlen-1, y)])
+           sides[3].append(smdata[(0, (ylen-1)-y)])
+        for side in sides:
+            side = tuple(side)
+        sides = tuple(sides)
+
+        for y in range(self.outimage.size[1]):
+            row = []
+            for x in range(self.outimage.size[0]):
+                if result is not None:
+                    break
+
+                if (x + xlen) <= self.outimage.size[0]: #Top and Bottom check.
+                    while len(row) != xlen: #get the row to match the size.
+                        if len(row) > xlen:
+                            del row[-1]
+                        elif len(row) < xlen:
+                           row.append(self.processor.outdata[x+len(row),y])
+                    for s in range(0, 4, 2):
+                        # print row
+                        # print sides[s]
+                        # print sides[s] == row
+                        flag = 1
+                        for sm, lg in zip(sides[s], row):
+                            if not self._tupleSub(sm, lg):
+                                flag = 0
+                                break
+                        if flag: result =  x, y, s
+                if (x + ylen) <= self.outimage.size[0]:
+                    while len(row) != ylen: #get the row to match the size.
+                        if len(row) > ylen:
+                            del row[-1]
+                        elif len(row) < ylen:
+                           row.append(self.processor.outdata[x+len(row),y])
+                    for s in range(1, 4, 2):
+                        # print row
+                        # print sides[s]
+                        # print sides[s] == row
+                        flag = 1
+                        for sm, lg in zip(sides[s], row):
+                            if not self._tupleSub(sm, lg):
+                                flag = 0
+                                break
+                        if flag: result =  x, y, s
+                del row[0]
+        if result is not None:
+            im = Image.new("RGBA", (self.outimage.size[0], self.outimage.size[0]))
+            imdata = im.load()
+
+            for y in range(smim.size[1]):
+                for x in range(smim.size[0]):
+                    newx = result[0] + x
+                    newy = result[1] + y
+                    imdata[newx, newy] = smdata[x,y]
+
+            im.save(outfile)
+        self.exportMerge(outfile, outfile)
+
     def checkAndAct(self, img):
         """
         `Author`: Bill Clark
@@ -223,16 +300,16 @@ class Merger:
 
 if __name__ == "__main__":
     debug = 0
-    inputs = ['Input/One Visual.jpg', 'Input/One Infrared.jpg']
+    inputs = ['Input/Camera 1.jpg', 'Input\Camera crop.jpg']
     m = Merger('Output/ImFuse.jpg')
 
     m.processor = PixelProcess.ExtractPixelRemote()
-    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+    m.processor.setActorCommand(PixelProcess.TakeNonEmptySecondCommand())
     m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
-    m.processor.checkcmd.diffnum = 120
+    m.processor.checkcmd.diffnum = 0
 
     m.merge(inputs[0])
-    m.merge(inputs[1])
+    print m.cropFind('foo.jpg', inputs[1])
     print "Number of pixels recorded.", len(m.processor.pixels)
 
     post = m.processor.getGroupedPixels()

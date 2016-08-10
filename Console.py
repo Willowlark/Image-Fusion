@@ -43,6 +43,8 @@ class Console(cmd.Cmd):
         """Set the check and act commands to empty commands."""
         self.m.processor.setActorCommand(PixelProcess.PixelCommand())
         self.m.processor.setCheckCommand(PixelProcess.PixelCommand())
+    def do_takenonemptysecond(self):
+        self.m.processor.setActorCommand(PixelProcess.TakeNonEmptySecondCommand())
 
     def do_extractremote(self, arg):
         """Set the processor's remote to record changed pixels."""
@@ -73,6 +75,9 @@ class Console(cmd.Cmd):
         """Detect people in any number of images."""
         paths = self.splitPaths(images)
         peopledetect.detect(paths)
+    def do_cropfind(self, images):
+        paths = self.splitPaths(images)
+        print self.m.cropFind(paths[0], paths[1])
 
     def do_save(self, arg):
         """Save the image."""
