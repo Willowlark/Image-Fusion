@@ -135,6 +135,36 @@ class Merger:
         self.outfile = outfile
         self.merge(*images)
 
+    def hashMerge(self, outfile, smallImage):
+        smim = Image.open(smallImage)
+        smdata = smim.load()
+        xlen, ylen = smim.size
+
+        # Create Sides, and generate Hashes of them.
+        sides = [[],[],[],[]]
+        hashes = []
+        for x in range(xlen): #Top Side, Bottom Side
+            sides[0].append((x, 0))
+            sides[2].append((x, ylen-1))
+        for y in range(ylen): # Right Side, Left Side
+            sides[1].append((xlen-1, y))
+            sides[3].append((0, y))
+        for side in sides:
+            side = tuple(side)
+            hashes.append(hash(side))
+        sides = tuple(sides)
+
+        for y in self.outimage.size[1]:
+            for x in self.outimage.size[0]:
+                if (y + ylen) <= self.outimage.size[1] and (x + xlen) <= self.outimage.size[0]:
+                    pass
+                    #top and bottom
+                if (y + xlen) <= self.outimage.size[1] and (x + ylen) <= self.outimage.size[0]:
+                    pass
+                    #left and right
+
+
+
     def checkAndAct(self, img):
         """
         `Author`: Bill Clark
@@ -223,38 +253,38 @@ class Merger:
 
 if __name__ == "__main__":
     debug = 0
-    inputs = ['Input/One Visual.jpg', 'Input/One Infrared.jpg']
+    inputs = ['Input/Camera 1.jpg', 'Output\Only Pixels.jpg']
     m = Merger('Output/ImFuse.jpg')
 
-    m.processor = PixelProcess.ExtractPixelRemote()
-    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
-    m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
-    m.processor.checkcmd.diffnum = 120
-
+    # m.processor = PixelProcess.ExtractPixelRemote()
+    # m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+    # m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+    # m.processor.checkcmd.diffnum = 120
+    #
     m.merge(inputs[0])
-    m.merge(inputs[1])
-    print "Number of pixels recorded.", len(m.processor.pixels)
-
-    post = m.processor.getGroupedPixels()
-
-    post.sortCount()
-    post.filter()
-
-    for p in post.generator():
-        print p
-
-    f = post.first()
-    print f
-
-    # for group in post:  # Post the groups to the outimage.
-    #     for p in group.pixels:
-    #         imdata[p[0], p[1]] = m.processor.pixels[p]
-
-    #Output the first group to it's own image.
-    f.save('Output/Only Pixels.png', m.processor.pixels)
-
-    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
-
-    # m.exportMerge('Output/DifferenceFile.jpg', 'Output/One Fused Provided.jpg')
-
-    m.save()
+    m.hashMerge('foo', inputs[1])
+    # print "Number of pixels recorded.", len(m.processor.pixels)
+    #
+    # post = m.processor.getGroupedPixels()
+    #
+    # post.sortCount()
+    # post.filter()
+    #
+    # for p in post.generator():
+    #     print p
+    #
+    # f = post.first()
+    # print f
+    #
+    # # for group in post:  # Post the groups to the outimage.
+    # #     for p in group.pixels:
+    # #         imdata[p[0], p[1]] = m.processor.pixels[p]
+    #
+    # #Output the first group to it's own image.
+    # f.save('Output/Only Pixels.png', m.processor.pixels)
+    #
+    # m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
+    #
+    # # m.exportMerge('Output/DifferenceFile.jpg', 'Output/One Fused Provided.jpg')
+    #
+    # m.save()
