@@ -73,6 +73,9 @@ class Console(cmd.Cmd):
         """Detect people in any number of images."""
         paths = self.splitPaths(images)
         peopledetect.detect(paths)
+    def do_cropfind(self, images):
+        paths = self.splitPaths(images)
+        print self.m.cropFind(paths[0], paths[1])
 
     def do_save(self, arg):
         """Save the image."""

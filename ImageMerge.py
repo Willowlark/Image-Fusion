@@ -142,7 +142,7 @@ class Merger:
         return True
 
 
-    def hashMerge(self, outfile, smallImage):
+    def cropFind(self, outfile, smallImage):
         smim = Image.open(smallImage)
         smdata = smim.load()
         xlen, ylen = smim.size
@@ -294,7 +294,7 @@ if __name__ == "__main__":
     # m.processor.checkcmd.diffnum = 120
     #
     m.merge(inputs[0])
-    print m.hashMerge('foo', inputs[1])
+    print m.cropFind('foo', inputs[1])
     # print "Number of pixels recorded.", len(m.processor.pixels)
     #
     # post = m.processor.getGroupedPixels()
