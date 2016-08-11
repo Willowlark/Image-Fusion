@@ -1,4 +1,4 @@
-import cv2, os, PIL, ntpath, ImageMerge, PixelProcess, images2gif
+import cv2, os, PIL, ntpath, ImageMerge, PixelProcess, images2gif, Console
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw
 from pprint import pprint
@@ -75,45 +75,19 @@ def obtain_dimensions(base_file, obj_file):
 
 def apply_image_merge(base_file, obj_file, verbose=False):
 
-    inputs = [base_file, obj_file]
-    m = ImageMerge.Merger('Output/ImF.png')
 
-    m.processor = PixelProcess.ExtractPixelRemote()
-    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
-    m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
 
-    m.merge(inputs[0])
-    m.merge(inputs[1])
+    consolas = Console.Console('Output/ImF.png')
+    consolas.do_extractremote(None)
+    consolas.do_redhighlight(None)
+    consolas.do_colordiff(120)
 
-    post = m.processor.getGroupedPixels()
+    consolas.do_merge(base_file)
+    consolas.do_merge(obj_file)
 
-    post.sortCount(reverse=True)
-    post.filter()
-    f = post.first()
-
-    if verbose is True:
-        print "Number of pixels recorded.", len(m.processor.pixels)
-
-        print "object @", f
-        ratio = f.height / PIL.Image.open(inputs[0]).height
-        print PIL.Image.open(inputs[0]).height
-        print "pct of height", ratio
-
-        im = PIL.Image.new("RGBA", (f.width, f.height))
-        imdata = im.load()
-
-        for p in f.pixels:
-            imdata[p[0] - f.x[0], p[1] - f.y[0]] = m.processor.pixels[p]
-
-        im.show()
-        im.save('Output/Only Pixels.png')
-
-        m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
-        m.processor.checkcmd.diffnum = 50
-        m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
-        m.save()
-
-        print 'merge finished, see Output folder for result images'
+    consolas.do_gengroups(None)
+    consolas.do_countsortgroups(None)
+    f = consolas.groups.first()
 
     return f.x, f.y, f.width, f.height
 

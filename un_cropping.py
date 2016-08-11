@@ -223,10 +223,10 @@ if __name__ == '__main__':
     ret = main(img, ret)
     ret.show()
 
-    img = Image.open('Input/Two Crop test3.png')
-
-    ret = main(img, ret)
-    ret.show()
+    # img = Image.open('Input/Two Crop test3.png')
+    #
+    # ret = main(img, ret)
+    # ret.show()
 
     print("\n--- %s seconds ---" % (time.time() - start_time))
     sys.exit(0)
