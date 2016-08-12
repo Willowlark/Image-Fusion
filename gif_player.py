@@ -1,15 +1,36 @@
 from Tkinter import *
 from PIL import Image, ImageTk
 
+"""
+This file is leveraged from a public source to generate a tkinter label that visualizes an animated gif
+
+code adapted from source solution at:
+http://stackoverflow.com/questions/28518072/play-animations-in-gif-with-tkinter
+
+Used by homography.py class for gif displaying.
+By extending tkinter's label, we can apply the extended use of illustration to moving images.
+self.frames stores the Image.tk.photoimages that are sequenced over based on the duration variable created animation.
+"""
+
 class gifPlayer(Label):
 
-    def __init__(self, master, filename, duration=None):
-        self.master = master
+    def __init__(self, root, filename, duration=None):
+        """
+        constructor for gifPlayer object
+
+        `master` root pane of window
+        `filename` .gif file to be opened adn displayed
+        `duration` delay between frames, in seconds
+        """
+        self.root = root
         self.filename = filename
         self.duration = duration
-        self.start(self.master, self.filename, self.duration)
+        self.start(self.root, self.filename, self.duration)
 
-    def start(self, master, filename, duration=None):
+    def start(self, root, filename, duration=None):
+        """
+        run instance gifPlayer
+        """
         self.im = Image.open(filename)
         seq =  []
         try:
@@ -32,7 +53,7 @@ class gifPlayer(Label):
         for image in seq[1:]:
             self.frames.append(ImageTk.PhotoImage(image.convert('RGBA')))
 
-        Label.__init__(self, master, image=self.frames[0])
+        Label.__init__(self, root, image=self.frames[0])
         self.idx = 0
         self.cancel = self.after(self.delay, self.play)
 
@@ -47,7 +68,28 @@ class gifPlayer(Label):
     def slow(self):
         self.after_cancel(self.cancel)
 
-    def run(self, root):
-        Button(root, text='slow down', command=self.slow).pack()
-        Button(root, text='speed up', command=self.ffwd).pack()
-        root.mainloop()
+    def run(self, root=None):
+        """
+        stand alone run-me for gifPlayer usage
+        """
+        if root is None:
+            Button(self.root, text='slow down', command=self.slow).pack()
+            Button(self.root, text='speed up', command=self.ffwd).pack()
+            self.root.mainloop()
+        else:
+            Button(root, text='slow down', command=self.slow).pack()
+            Button(root, text='speed up', command=self.ffwd).pack()
+            root.mainloop()
+
+if __name__ == "__main__":
+    """
+    main test for gif playing application
+
+    example:
+    sys.argv[1] = "gif_test/my_gif.gif"
+    """
+
+    file = sys.argv[1]
+    player = gifPlayer(Tk(), file)
+    player.pack()
+    player.run()
