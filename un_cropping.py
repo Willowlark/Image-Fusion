@@ -153,9 +153,10 @@ def main(subimg, totimg):
             sys.stdout.flush()
     raise Exception("Not Found")
 
-def run_me():
+def run_me(run_time=None):
 
-    start_time = time.time()
+    if run_time:
+        start_time = time.time()
 
     # inp_paths = [os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'Two Crop test.png')]
 
@@ -179,18 +180,8 @@ def run_me():
     # ret = main(img, ret)
     # ret.show()
 
-    print("\n--- %s seconds ---" % (time.time() - start_time))
-
-
-def rotation_debug():
-
-    inp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', 'Two Crop test.png')
-    out_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'UnCropResult.png')
-
-    img = Image.open(inp_path)
-    res = img.transpose(Image.FLIP_LEFT_RIGHT)
-    res.show()
-    res.save(out_path)
+    if run_time:
+        print("\n--- %s seconds ---" % (time.time() - start_time))
 
 if __name__ == '__main__':
 
