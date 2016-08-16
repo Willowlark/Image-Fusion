@@ -1,66 +1,6 @@
 from __future__ import division
 from PIL import Image, ImageOps, ImageFilter
 import os, sys, time
-from pprint import pprint
-
-class un_crop():
-
-    def __init__(self):
-        pass
-
-    def color_separator(self, im):
-        if im.getpalette():
-            im = im.convert('RGB')
-
-        colors = im.getcolors()
-        width, height = im.size
-        colors_dict = dict((val[1],Image.new('RGB', (width, height), (0,0,0)))
-                            for val in colors)
-        pix = im.load()
-        for i in xrange(width):
-            for j in xrange(height):
-                colors_dict[pix[i,j]].putpixel((i,j), pix[i,j])
-        return colors_dict
-
-    def find_height(self, infile):
-
-        # im = Image.open(infile)
-        colors_dict = self.color_separator(infile)
-        # pprint(colors_dict)
-        out = colors_dict[self.color]
-        # out.show()
-
-        pixels = list(out.getdata())
-        width, height = infile.size
-        pixels = [pixels[i * width:(i + 1) * width] for i in xrange(height)]
-
-        first = next(row for row in pixels if row.__contains__(self.color))
-        top = pixels.index(first)
-        print "first @ ln", top
-
-        pixels.reverse()
-        last = next(row for row in pixels if row.__contains__(self.color))
-        bot = pixels.index(last)
-        print "last @ ln", bot
-
-        return bot- top, (bot - top) / height
-
-    def pixel_write(self,infile):
-        # this wil be replaced by the results of the operations of image merging and highlighting
-
-        directory = os.path.dirname(os.path.realpath(__file__))
-        temp = os.path.join(directory, 'Input', 'temp.jpg')
-        im = Image.open(infile).convert("L")
-        im.save(temp)
-        im = Image.open(temp).convert("RGB")
-        os.remove(temp)
-        pixels = im.load()  # create the pixel map
-
-        for i in range(127, 161):
-            for j in range(132, 134):
-                pixels[i, j] = self.color
-
-        return im
 
 def find_loc_double_check(original, img):
 
@@ -174,23 +114,26 @@ def main(subimg, totimg):
         tests.append((totimg, new_img))
 
     # left column
-    img = my_rot(subimg)
-    orig = my_rot(totimg)
-    for i in xrange(0, int(img.size[1] * min_overlap_factor)):
+    img = subimg.rotate(90, resample=Image.BICUBIC, expand=True)
+    orig = totimg.rotate(90, resample=Image.BICUBIC, expand=True)
+    lis = xrange(0, int(img.size[1] * min_overlap_factor))
+    for i in lis:
         new_img = img.crop((0, i, img.size[0], img.size[1]))
         tests.append((orig, new_img))
 
     # bottom row
-    img = my_rot(my_rot(subimg))
-    orig = my_rot(my_rot(totimg))
-    for i in xrange(0, int(img.size[1] * min_overlap_factor)):
+    img = subimg.rotate(180, resample=Image.BICUBIC, expand=True)
+    orig = totimg.rotate(180, resample=Image.BICUBIC, expand=True)
+    lis = xrange(0, int(img.size[1] * min_overlap_factor))
+    for i in lis:
         new_img = img.crop((0, i, img.size[0], img.size[1]))
         tests.append((orig, new_img))
 
     # right col
-    img = my_rot(my_rot(my_rot(subimg)))
-    orig = my_rot(my_rot(my_rot(totimg)))
-    for i in xrange(0, int(img.size[1] * min_overlap_factor)):
+    img = subimg.rotate(270, resample=Image.BICUBIC, expand=True)
+    orig = totimg.rotate(270, resample=Image.BICUBIC, expand=True)
+    lis = xrange(0, int(img.size[1] * min_overlap_factor))
+    for i in lis:
         new_img = img.crop((0, i, img.size[0], img.size[1]))
         tests.append((orig, new_img))
 
@@ -201,27 +144,35 @@ def main(subimg, totimg):
         if loc:
             print "\n", entry[1].info, "Found in", entry[0].info
             res = place_image(subimg, entry[1], entry[0], loc, highlight=True)
-            return res
+            res.show()
+            return
             # break
             # raw_input("Press Enter to continue...")
         else:
             sys.stdout.write('.')
             sys.stdout.flush()
+    raise Exception("Not Found")
 
-if __name__ == '__main__':
+def run_me():
 
     start_time = time.time()
 
-    img = Image.open('Input/Two Crop test.png')
-    orig = Image.open('Input/Two Infrared test.png')
+    # inp_paths = [os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'Two Crop test.png')]
 
-    ret = main(img, orig)
-    ret.show()
+    inp_paths = [os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', 'Two Crop test.png'),
+                 os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', 'Two Crop test2.png')]
+    orig_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', 'Two Infrared test.png')
+    out_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'UnCropResult.png')
 
-    img = Image.open('Input/Two Crop test2.png')
+    orig = Image.open(orig_path)
 
-    ret = main(img, ret)
-    ret.show()
+    for img_path in inp_paths:
+        try:
+            img = Image.open(img_path)
+            main(img, orig)
+        except Exception as e:
+            img = Image.open(img_path)
+            main(img.transpose(Image.FLIP_LEFT_RIGHT), orig.transpose(Image.FLIP_LEFT_RIGHT))
 
     # img = Image.open('Input/Two Crop test3.png')
     #
@@ -229,6 +180,20 @@ if __name__ == '__main__':
     # ret.show()
 
     print("\n--- %s seconds ---" % (time.time() - start_time))
+
+
+def rotation_debug():
+
+    inp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', 'Two Crop test.png')
+    out_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'UnCropResult.png')
+
+    img = Image.open(inp_path)
+    res = img.transpose(Image.FLIP_LEFT_RIGHT)
+    res.show()
+    res.save(out_path)
+
+if __name__ == '__main__':
+
+    run_me()
+
     sys.exit(0)
-
-
