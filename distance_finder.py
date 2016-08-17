@@ -1,23 +1,23 @@
 from __future__ import division
 from pprint import pprint
-import math
 from PIL import Image
 from PIL.ExifTags import TAGS
-import os
-import traceback
-import sys
-import warnings
-import json
-import ImageMerge
-import PixelProcess
-import Console
+import math, os, traceback, sys, warnings, json, Console
 
-# EXAMPLE ARGS
-# 1.82 T "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
-#
-# INDEPENDENT CALL EXAMPLE:
-# method = Primary(1.82, base.jpg, input.jpg)
-# method.find(distance)
+"""
+EXAMPLE ARGS
+1.82 "P,S,T" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
+
+1.82 = the actual height of the object whose distance is being sought, in meters
+"P,S,T" = the argument list of the methods chosen to be applied during the distance solving process, as denoted by the first letter of the name. comma delimited list
+"first/file/path" = the base file, against which all subsequent files are compared for difference extraction and examination
+"all/subsequent/files/path" = the files wherein the difference to be examined lies
+
+INDEPENDENT CALL EXAMPLE:
+procedure = Primary(base.jpg, input.jpg, 1.82)
+procedure.find_distance()
+"""
+
 
 class Solution:
     """
@@ -33,6 +33,13 @@ class Solution:
     """
 
     def __init__(self, base_file=None, obj_file=None, known_height=None):
+        """
+        constructor for one solution object.
+
+        `base_file` the base file against which the obj_file will be checked and distance solved
+        `obj_file` the file being examined for difference, and determining distance
+        `known_height` the known height in meters of the object in the picture
+        """
         self.base_file = base_file
         self.obj_file = obj_file
         self.height_object_in_question = known_height
@@ -60,25 +67,26 @@ class Solution:
         im = Image.open(obj_file)
         img_width, img_height = im.size
 
-        consolas = Console('Output/ImF.png')
-        consolas.do_extractremote()
-        consolas.do_redhighlight()
+        consolas = Console.Console('Output/ImF.png')
+        consolas.do_extractremote(None)
+        consolas.do_redhighlight(None)
         consolas.do_colordiff(120)
 
         consolas.do_merge(base_file)
         consolas.do_merge(obj_file)
 
-        consolas.do_gengroups()
-        consolas.do_countsortgroups()
-        first = consolas.groups[0]
+        consolas.do_gengroups(None)
+        consolas.do_countsortgroups(None)
+        first = consolas.groups.first()
 
-        print "object @", first
-        ratio = first.height / Image.open(base_file).height
-        print Image.open(base_file).height
-        print "pct of height", ratio
+        # print "object @", first
+        # ratio = first.height / Image.open(base_file).height
+        # print Image.open(base_file).height
+        # print "pct of height", ratio
+        #
+        #
+        # print "obj height px", first.height, "\nimage height px", img_height
 
-
-        print "obj height px", first.height, "\nimage height px", img_height
         return (first.height, img_height)
 
     def get_exif(self, path):
@@ -95,17 +103,6 @@ class Solution:
             decoded = TAGS.get(tag, tag)
             ret[decoded] = value
         return ret
-
-    def find_distance_given_height_primary(self, obj_height_px, focal_len_px):
-        """
-        This method takes the height of the object in pixels and the determined focal_length in pixels to find the distance to that object
-
-        `obj_height_px` the height of the object in pixels
-        `return` the determined distance of the object from the camera in units of height_object_in_question
-        """
-        test_angle = math.atan(obj_height_px / focal_len_px)
-        goal_dist = float(self.height_object_in_question) / math.tan(test_angle)
-        return goal_dist
 
     def find_key(self, eq_focal_len, act_focal_len):
         """
@@ -125,13 +122,13 @@ class Solution:
         crop_fact = eq_focal_len / act_focal_len
         for k, v in self.camera_dict.iteritems():
             if v[1] + 0.3 > crop_fact and v[
-                1] - 0.3 < crop_fact:  # If calculated crop factor is with +- 0.3 units of the known than it is accepted
+                1] - 0.3 < crop_fact:  # If calculated crop factor is within +- 0.3 units of the known, then it is accepted
                 return str(k)
 
     def find_distance(self):
         """
         inherited method to be used by each subclass in a particular way
-        :return: distance, in meters of object from aperture, if solution available, else None
+        `return` distance, in meters of object from aperture, if solution available, else None
         """
         pass
 
@@ -142,8 +139,18 @@ class Primary(Solution):
     """
 
     def __init__(self, base_file=None, obj_file=None, known_height=None):
-        Solution.__init__(self, base_file, obj_file, known_height)
+        """
+        constructor for Primary method of execution.
 
+        Note the extraction of info from the calibration json, calib_info, is  performed here. Should this procedure fail, the error will be printer but the object still constructed
+        It will exist but it will not be functional, unless the calibration is successfully executed in the __init__
+
+        `base_file` the base file against which the obj_file will be checked and distance solved
+        `obj_file` the file being examined for difference, and determining distance
+        `known_height` the known height in meters of the object in the picture
+        """
+
+        Solution.__init__(self, base_file, obj_file, known_height)
         with open(os.path.join(directory, 'json', 'calib_info.json'), 'r') as fp:
             json_data = json.load(fp)
             try:
@@ -153,12 +160,20 @@ class Primary(Solution):
                 sys.stderr.write(str(ke))
     
     def find_distance(self):
+        """
+        This method executes the tasks in order to find the distance of the object of the merge highlight
+        The differentiating factor that delineates this method from Secondary and Tertiary is the use of calibrated focal length
+
+        Using the math library, the arctangent of the height of the object in pixels divided byt he determined focal_length to find the angle of refraction, of the light through the lens.
+        This angle is used with the known height of the object to find distance using the property of tangent(angle) = opposite / adjacent
+        """
         print str(self.__class__.__name__), "Solving..."
         try:
             dimensions = self.get_object_height_px(self.base_file, self.obj_file)
-            # print "perceived object height", dimensions[0]
 
-            dist = self.find_distance_given_height_primary(dimensions[0], self.focal_len)
+            test_angle = math.atan(dimensions[0] / self.focal_len)
+            dist = float(self.height_object_in_question) / math.tan(test_angle)
+
             return dist
 
         except Exception as e:
@@ -171,26 +186,35 @@ class Secondary(Solution):
     Requires only proper file format, with exif tags, to run appropriately
     """
     def __init__(self, base_file=None, obj_file=None, known_height=None):
+        """
+        constructor for Secondary method of execution.
+
+        `base_file` the base file against which the obj_file will be checked and distance solved
+        `obj_file` the file being examined for difference, and determining distance
+        `known_height` the known height in meters of the object in the picture
+        """
         Solution.__init__(self, base_file, obj_file, known_height)
     
     def find_distance(self):
+        """
+        This method executes the tasks in order to find the distance of the object of the merge highlight
+
+        Using the math library, the arctangent of the height of the object in pixels divided byt he determined focal_length to find the angle of refraction, of the light through the lens.
+        This angle is used with the known height of the object to find distance using the property of tangent(angle) = opposite / adjacent
+        """
         print str(self.__class__.__name__), "Solving..."
         try:
             dimensions = self.get_object_height_px(self.base_file, self.obj_file)
             pix_pct = dimensions[0] / dimensions[1]
-            # print "pix pct", pix_pct
-
             tags = self.get_exif(self.obj_file)
-            # pprint(tags)
 
-            # focal_len = float([s for s in str.split(str(tags['LensModel'])) if s.__contains__('mm')][0][0:4])
             self.focal_len = int(tags['FocalLength'][0]) / int(tags['FocalLength'][1])
-            # print "focal len mm", self.focal_len
 
             key = self.find_key(tags['FocalLengthIn35mmFilm'], int(tags['FocalLength'][0]) / int(tags['FocalLength'][1]))
-            print "determined key", key
 
-            dist = self.find_distance_given_height_primary(pix_pct * self.camera_dict[key][0], self.focal_len)
+            test_angle = math.atan(pix_pct * self.camera_dict[key][0] / self.focal_len)
+            dist = float(self.height_object_in_question) / math.tan(test_angle)
+
             return dist
 
         except Exception as e:
@@ -203,24 +227,29 @@ class Tertiary(Solution):
     Requires only proper file format, with exif tags, to run appropriately
     """
     def __init__(self, base_file=None, obj_file=None, known_height=None):
+        """
+        constructor for Tertiary method of execution.
+
+        `base_file` the base file against which the obj_file will be checked and distance solved
+        `obj_file` the file being examined for difference, and determining distance
+        `known_height` the known height in meters of the object in the picture
+        """
         Solution.__init__(self, base_file, obj_file, known_height)
     
     def find_distance(self):
+        """
+        This method executes the tasks in order to find the distance of the object of the merge highlight
+
+        Using the math library, the arctangent of the height of the object in pixels divided byt he determined focal_length to find the angle of refraction, of the light through the lens.
+        This angle is used with the known height of the object to find distance using the property of tangent(angle) = opposite / adjacent
+        """
         print str(self.__class__.__name__), "Solving..."
         try:
             dimensions = self.get_object_height_px(self.base_file, self.obj_file)
-            # print "perceived object height", dimensions[0]
-
             tags = self.get_exif(self.obj_file)
-            # pprint(tags)
-
-            # focal_len = float([s for s in str.split(str(tags['LensModel'])) if s.__contains__('mm')][0][0:4])
             self.focal_len = float(tags['FocalLength'][0]) / float(tags['FocalLength'][1])
-            # print "focal len mm", focal_len
 
-            key = self.find_key(tags['FocalLengthIn35mmFilm'],
-                                     int(tags['FocalLength'][0]) / int(tags['FocalLength'][1]))
-            # print "determined key", key
+            key = self.find_key(tags['FocalLengthIn35mmFilm'], int(tags['FocalLength'][0]) / int(tags['FocalLength'][1]))
 
             dist = (self.focal_len * self.height_object_in_question * dimensions[1]) / (
                 dimensions[0] * self.camera_dict[key][0])
@@ -236,9 +265,20 @@ class Quaternary(Solution):
     Requires proper file format, with exif tags, as well as exif tag 'SubjectDistance' and assumes the object is in field of focus
     """
     def __init__(self, base_file=None, obj_file=None, known_height=None):
+        """
+        constructor for Quaternary method of execution.
+
+        `base_file` the base file against which the obj_file will be checked and distance solved
+        `obj_file` the file being examined for difference, and determining distance
+        `known_height` the known height in meters of the object in the picture
+        """
         Solution.__init__(self, base_file, obj_file, known_height)
     
     def find_distance(self):
+        """
+        This method investigates the exif tags to find the SubjectDistance tag that may reveal the concerning information
+
+        """
         try:
             dist = self.get_exif(self.obj_file)['SubjectDistance']  # maybe useful, determined from center of focus in digital cameras
             return dist
@@ -250,6 +290,7 @@ class Quaternary(Solution):
 class Macro:
     """
     This class holds the capability of running several 'commands,' as instances of subclasses, to be readily used in extension
+    Stores list of 'methods' using strategy pattern. the commands list holds object of the Solution class tha implement a find_distance method
     """
     def __init__(self, *args):
         self.commands = []
@@ -265,18 +306,29 @@ class Macro:
             ret.append((str(c.__class__.__name__), os.path.split(c.obj_file)[1], c.find_distance()))
         return ret
 
-def main(known_height, base_file, infiles, method_flag):
+def main(known_height, method_flags, base_file, infiles):
+    """
+    run me method for scripting usage
+    for deployment usage see additional example args at file head
 
-    # run me
+    most useful individual deployment example (see line 325-328)
+    df = Macro(Primary(infile, known_height), Secondary(infile, known_height), Tertiary(infile, known_height))
 
-    # df = Macro(Primary(infile, known_height), Secondary(infile, known_height), Tertiary(infile, known_height))
-    # df = Macro(Primary(os.path.join(directory, 'Input', 'IMG_onehalf.jpg'), known_height))
+    `known_height` the known height in meters of the object in the picture
+    `method_flags` the list of flags chosen to denote the choice of method used to solve (P - primary,S -secondary, etc.)
+    `base_file` the base file against which all infiles will be checked and distance solved
+    `infiles` the lis tof file being examined for difference, and determining distance
+    `return` the list of results of upon execution
+    """
+
+    flags_list = method_flags.split(",")
 
     configs = {'P':Primary, 'S':Secondary, 'T':Tertiary, 'Q':Quaternary}
 
     df = Macro()
-    for obj_file in infiles:
-        df.add(configs[method_flag.upper()](known_height=known_height, obj_file=obj_file, base_file=base_file))
+    for flag in flags_list:
+        for obj_file in infiles:
+            df.add(configs[flag.upper()](known_height=known_height, obj_file=obj_file, base_file=base_file))
 
     results = df.run()
     return results
@@ -286,8 +338,10 @@ if __name__ == '__main__':
 
     directory = os.path.dirname(os.path.realpath(__file__))
 
-    infiles = sys.argv[4:]                                  # argv[3:] = all of the files for the script to be run over
-    res = main(known_height=float(sys.argv[1]), base_file=sys.argv[3], method_flag=sys.argv[2], infiles=infiles)    # argv[1] =  0.124, height of object in meters, argv[3] = base image file pathname (absolute)
+    infiles = sys.argv[4:]                                                                                              # argv[4:] = all of the files for the script to be run over
+    res = main(known_height=float(sys.argv[1]), method_flags=sys.argv[2], base_file=sys.argv[3], infiles=infiles)       # argv[1] =  0.124, height of object in meters, argv[3] = base image file pathname (absolute)
+
+    # res is the collection of results of each call ordered first by the method(s) chosen, then by the input files.
     pprint(res)
 
     sys.exit(0)

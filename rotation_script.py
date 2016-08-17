@@ -12,7 +12,7 @@ Rotate requires a parametrized number value for the angle the image must be rota
 def autorotate(inpath, outpath=None):
     """
     autorotate corrects an image's orientation for processing by the image_merge, pixelProcess, distance_finder, and calibration
-
+    The exif tags are examined for value of rotation_values, and the corresponding corrective angle si applied and the image is re-saved to the specified path
     """
 
     image = Image.open(inpath)
@@ -43,7 +43,8 @@ def autorotate(inpath, outpath=None):
 def rotate(degree, inpath, outpath=None):
     """
     rotate corrects an image's orientation based on specified parameter degree
-
+    Takes in a user specified parameter, and rotates image based on that.
+    WARNING, use with caution, the angle and degree of rotation should be tested before use
     """
 
     image = Image.open(inpath)
@@ -62,20 +63,10 @@ def rotate(degree, inpath, outpath=None):
         return True
     return False
 
-def debug():
-    """
-    used only in testing
-
-    """
-
-    infile = "/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_rot_test.jpg"
-    outfile = "/Users/robertseedorf/PycharmProjects/Image-Fusion/Output/temp.jpg"
-    print autorotate(infile, outfile)
-
 def main(inpath, outpath=None, degree=None):
     """
-    method for use outside of the realm of the individual script
-
+    method for use outside of the realm of the individual script,
+    Used in main to collect and interpret sys.args when being applied as script
     """
 
     if degree is not None:
