@@ -1,17 +1,16 @@
 from __future__ import division
-
-import json
-import math
-import os
-import sys
-
+import sys, json, os, math, PixelProcess, ImageMerge
 from PIL import Image
 
 from Merging import ImageMerge, PixelProcess
 
 """
+The main function of this script will write to the fixed location file, json/calib_info.json, the information pertinent to the distance_finder.py module
+By running the main script on the example arguments specified below will yield the calib_json file to store the focal_length info to be accessed by distance_finder.py.
+
 Example ARGS:
 "/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_base.jpg" "/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_calib.jpg" 0.124 1.0
+
 ...produces JSON of following format:
 {
     "calibration_image": "/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_calib.jpg",
@@ -21,7 +20,7 @@ Example ARGS:
     "dist_object_in_question": 1.0
 }
 
-  OR
+  <OR>
 
 Example ARGS:
 69 0.124 1.0
@@ -33,55 +32,30 @@ Example ARGS:
 }
 """
 
-def find_object_px(base_file, calib_file):
+def find_object_px(base_file, obj_file):
     """
-    This method should will be finished to find the height of the found object in pixels
+    This method will be find the height of the found object in pixels
     to be used essential to every distance method
 
-    `return` (obj_height, img_height) the height of teh object in px, and the height of the image in pixels
+    `return` the object height in pixels, as determined by the Image_merge module via console
     """
 
-    inputs = [base_file, calib_file]
-    m = ImageMerge.Merger('Output/ImF.png')
+    im = Image.open(obj_file)
+    img_width, img_height = im.size
 
-    m.processor = PixelProcess.ExtractPixelRemote()
-    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
-    m.processor.setCheckCommand(PixelProcess.ColorDiffCommand())
+    consolas = Console.Console('Output/ImF.png')
+    consolas.do_extractremote(None)
+    consolas.do_redhighlight(None)
+    consolas.do_colordiff(120)
 
-    m.merge(inputs[0])
-    m.merge(inputs[1])
-    print "Number of pixels recorded.", len(m.processor.pixels)
+    consolas.do_merge(base_file)
+    consolas.do_merge(obj_file)
 
-    post = m.processor.getGroupedPixels()
+    consolas.do_gengroups(None)
+    consolas.do_countsortgroups(None)
+    first = consolas.groups.first()
 
-    print "object @", post[0]
-    ratio = post[0].height / Image.open(inputs[0]).height
-    print "image height", Image.open(inputs[0]).height
-    print "pct of height", ratio
-
-    im = Image.new("RGBA", (post[0].width, post[0].height))
-    imdata = im.load()
-
-    for p in post[0].pixels:
-        imdata[p[0] - post[0].x[0], p[1] - post[0].y[0]] = m.processor.pixels[p]
-
-    im.show()
-    im.save('Output/Only Pixels.png')
-
-    m.processor.setActorCommand(PixelProcess.RedHighlightCommand())
-
-    m.processor.checkcmd.diffnum = 50
-
-    i = Image.new('RGB', Image.open(inputs[0]).size)
-    i.save('Output/One Fused Provided.jpg')
-
-    m.exportMerge('Output/DifferenceFile.png', 'Output/One Fused Provided.jpg')
-
-    m.save()
-
-    print "obj height px", post[0].height, "\nvert px pct", ratio
-
-    return post[0].height
+    return first.height
 
 def calibrate_focal_len(control_object_distance, control_object_height, control_object_height_px):
     """
@@ -99,6 +73,11 @@ def calibrate_focal_len(control_object_distance, control_object_height, control_
     return focal_len_px
 
 def run_me():
+    """
+    run me of main script.
+    Opens, calculates ad writes to calib_info
+
+    """
     print "Calibrating focal length"
 
     global dist_object_in_question
@@ -143,7 +122,8 @@ def run_me():
 
     print "calibration finished, see", calib_file
 
-run_me()
-sys.exit(0)
+if __name__ == "__main__":
+    run_me()
+    sys.exit(0)
 
 
