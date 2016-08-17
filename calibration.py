@@ -1,6 +1,7 @@
 from __future__ import division
 import sys, json, os, math, PixelProcess, ImageMerge
 from PIL import Image
+import Console
 
 from Merging import ImageMerge, PixelProcess
 
