@@ -155,6 +155,23 @@ class Merger:
         return True
 
     def _rowSizer(self, x, y, row, length):
+        """
+        `Author`: Bill Clark
+
+        This method take a row and makes the length equal to the length parameter. It fills
+        the row using the tracked image pixel data, building a row on y value Y starting at
+        x in that row. Supports shrinking a row as well, though that isn't needed anymore.
+
+        `x`: X value to start the row on.
+
+        `y`: Y value of the row.
+
+        `row`: The array that will hold the row.
+
+        `length`: required length of the row.
+
+        `return`: The new row.
+        """
         while len(row) != length: #get the row to match the size.
             if len(row) > length:
                 del row[-1]
@@ -163,6 +180,21 @@ class Merger:
         return row
 
     def _compareRow(self, sideOne, sideTwo, row):
+        """
+        `Author`: Bill Clark
+
+        Compares two rows to another. This is used to compare the top and bottom, as well as the
+        left and right rows of the subimage to an equally sized row from the tracked image.
+        The comparison is done via tuplesub, this controls the pixel flow into that function.
+
+        `sideOne`: The top or right side to be compared.
+
+        `sideTwo`: The bottom or left side to be compared.
+
+        `row`: The row to compare to from the tracked image.
+
+        `return`: Flag (True if a match was found), if1 (sideOne is same or not), & if2 (same for sideTwo)
+        """
         flag, if1, if2 = True, True, True
         for side1, side2, lg in zip(sideOne, sideTwo, row):
             if if1: if1 = self._tupleSub(side1, lg)
@@ -196,18 +228,6 @@ class Merger:
         xlen, ylen = smim.size
         result = None
 
-        # Create Sides, and generate Hashes of them.
-        # sides = [[],[],[],[]]
-        # for x in range(xlen): #Top Side, Bottom Side
-        #    sides[0].append(smdata[(x, 0)])
-        #    sides[2].append(smdata[((xlen-1)-x, ylen-1)])
-        # for y in range(ylen): # Right Side, Left Side
-        #    sides[1].append(smdata[(xlen-1, y)])
-        #    sides[3].append(smdata[(0, (ylen-1)-y)])
-        # for side in sides:
-        #     side = tuple(side)
-        # sides = tuple(sides)
-
         sides = [[], [], [], []]
 
         high = max(xlen, ylen)
@@ -232,14 +252,6 @@ class Merger:
                 if (x + xlen) <= self.outimage.size[0]: #Top and Bottom check.
 
                     row1.append(self.processor.outdata[x+len(row1),y])
-                    # self._rowSizer(x, y, row, xlen)
-                    # for s in range(0, 4, 2):
-                    #     flag = 1
-                    #     for sm, lg in zip(sides[s], row):
-                    #         if not self._tupleSub(sm, lg):
-                    #             flag = 0
-                    #             break
-                    #     if flag: result =  x, y, s
                     flag, if0, if2 = self._compareRow(sides[0], sides[2], row1)
 
                     if flag and if0: result = x, y, 0
@@ -248,14 +260,6 @@ class Merger:
                 if (x + ylen) <= self.outimage.size[0]:
 
                     row2.append(self.processor.outdata[x+len(row2),y])
-                    # self._rowSizer(x, y, row, ylen)
-                    # for s in range(1, 4, 2):
-                    #     flag = 1
-                    #     for sm, lg in zip(sides[s], row):
-                    #         if not self._tupleSub(sm, lg):
-                    #             flag = 0
-                    #             break
-                    #     if flag: result =  x, y, s
                     flag, if1, if3 = self._compareRow(sides[1], sides[3], row2)
 
                     if flag and if1: result = x, y, 1
