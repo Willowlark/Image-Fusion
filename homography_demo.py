@@ -1,8 +1,7 @@
 import cv2, os
 import numpy as np
 from PIL import Image
-from pprint import pprint
-
+import sys
 cur_dir = os.path.dirname(os.path.realpath(__file__))
 inp_dir = os.path.join(cur_dir, 'Input')
 
@@ -25,6 +24,8 @@ bottom_left = [0,im.size[1]]
 
 pts_base = np.array([top_left, top_right, bottom_right, bottom_left])
 
+cv2.waitKey(0)
+
 ##############################
 
 Image.open(base_img_path).show()
@@ -35,6 +36,8 @@ bottom_right= [148, 268]
 bottom_left = [20, 200]
 
 pts_moded = np.array([top_left, top_right, bottom_right, bottom_left])
+
+cv2.waitKey(0)
 
 ##############################
 
@@ -47,6 +50,8 @@ cv2.imwrite(res_img_path, im_out)
 im1 = Image.open(res_img_path)
 im1.show()
 
+cv2.waitKey(0)
+
 #############################
 
 sub_pix = im1.load()
@@ -55,9 +60,14 @@ im2 = Image.open(base_img_path)
 im2.convert("RGBA")
 tot_pix = im2.load()
 
+thresh = 20
 for i in range(im1.size[0]):
     for j in range(im1.size[1]):
-        if sub_pix[i,j] != (0,0,0):
+        if sub_pix[i, j][0] < thresh and sub_pix[i, j][1] < thresh and sub_pix[i, j][1] < thresh:
+            pass
+        else:
             tot_pix[i,j] = sub_pix[i,j]
 
 im2.show()
+
+sys.exit(0)
