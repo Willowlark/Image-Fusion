@@ -1,7 +1,8 @@
 import cv2, os
-import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 import sys
+import numpy as np
+
 cur_dir = os.path.dirname(os.path.realpath(__file__))
 inp_dir = os.path.join(cur_dir, 'Input')
 
@@ -9,65 +10,103 @@ sub_img_path = os.path.join(inp_dir, "in1_file.jpg")
 base_img_path = os.path.join(inp_dir, "in2_file.jpg")
 res_img_path = os.path.join(inp_dir, 'result_file.jpg')
 
-sub_img = cv2.imread(sub_img_path)
-tot_img = cv2.imread(base_img_path)
+def feature_detection():
 
-############################
+    orb =  cv2.xfeatures2d.SIFT_create()
+    img = cv2.imread(sub_img_path)
 
-im = Image.open(sub_img_path)
-im.show()
+    kp, des = orb.detectAndCompute(img, None)
 
-top_left = [0,0]
-top_right = [im.size[0],0]
-bottom_right= im.size
-bottom_left = [0,im.size[1]]
+    print kp
+    print des
 
-pts_base = np.array([top_left, top_right, bottom_right, bottom_left])
+def apply_border(img, points, color=None, border=None):
 
-cv2.waitKey(0)
+    if color is None:
+        color =(255,0,0)
+    if border is None:
+        border = 3
 
-##############################
+    draw = ImageDraw.Draw(img)
 
-Image.open(base_img_path).show()
+    shifted = points[1:] + points[:1]
+    lis = zip(points, shifted)
 
-top_left = [70, 129]
-top_right = [170, 216]
-bottom_right= [148, 268]
-bottom_left = [20, 200]
+    for pair in lis:
+        draw.line((pair[0][0], pair[0][1], pair[1][0], pair[1][1]), fill=color, width=border)
 
-pts_moded = np.array([top_left, top_right, bottom_right, bottom_left])
+    return img
 
-cv2.waitKey(0)
+def main():
 
-##############################
+    sub_img = cv2.imread(sub_img_path)
+    tot_img = cv2.imread(base_img_path)
 
-h, status = cv2.findHomography(pts_base, pts_moded)
+    ############################
 
-im_out = cv2.warpPerspective(sub_img, h, (tot_img.shape[1], tot_img.shape[0]))
+    im = Image.open(sub_img_path)
+    #im.show()
 
-cv2.imwrite(res_img_path, im_out)
+    top_left = [0,0]
+    top_right = [im.size[0],0]
+    bottom_right= [im.size[0], im.size[1]]
+    bottom_left = [0,im.size[1]]
 
-im1 = Image.open(res_img_path)
-im1.show()
+    pts_base = np.array([top_left, top_right, bottom_right, bottom_left])
 
-cv2.waitKey(0)
+    #raw_input("Press Enter to continue...")
 
-#############################
+    ##############################
 
-sub_pix = im1.load()
+    #Image.open(base_img_path).show()
 
-im2 = Image.open(base_img_path)
-im2.convert("RGBA")
-tot_pix = im2.load()
+    top_left = [70, 129]
+    top_right = [170, 216]
+    bottom_right= [148, 268]
+    bottom_left = [20, 200]
 
-thresh = 20
-for i in range(im1.size[0]):
-    for j in range(im1.size[1]):
-        if sub_pix[i, j][0] < thresh and sub_pix[i, j][1] < thresh and sub_pix[i, j][1] < thresh:
-            pass
-        else:
-            tot_pix[i,j] = sub_pix[i,j]
+    pts_moded = np.array([top_left, top_right, bottom_right, bottom_left])
 
-im2.show()
+    #raw_input("Press Enter to continue...")
 
-sys.exit(0)
+    ##############################
+
+    h, status = cv2.findHomography(pts_base, pts_moded)
+
+    im_out = cv2.warpPerspective(sub_img, h, (tot_img.shape[1], tot_img.shape[0]))
+
+    cv2.imwrite(res_img_path, im_out)
+
+    im1 = Image.open(res_img_path)
+    #im1.show()
+
+    #raw_input("Press Enter to continue...")
+
+    #############################
+
+    sub_pix = im1.load()
+
+    im2 = Image.open(base_img_path)
+    im2.convert("RGBA")
+    tot_pix = im2.load()
+
+    thresh = 25
+    for i in range(im1.size[0]):
+        for j in range(im1.size[1]):
+            if sub_pix[i, j][0] < thresh and sub_pix[i, j][1] < thresh and sub_pix[i, j][1] < thresh:
+                pass
+            else:
+                tot_pix[i,j] = sub_pix[i,j]
+
+    im2.show()
+    im2.save(res_img_path)
+
+    img_out = apply_border(im2, points=[top_left, top_right, bottom_right, bottom_left], color=(255,0,0), border=3)
+    img_out.show()
+
+if __name__ == '__main__':
+
+    feature_detection()
+
+    sys.exit(0)
+
