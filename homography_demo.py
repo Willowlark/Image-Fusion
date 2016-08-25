@@ -12,20 +12,16 @@ res_img_path = os.path.join(inp_dir, 'result_file.jpg')
 
 def feature_detection():
 
-    orb =  cv2.xfeatures2d.SIFT_create()
-    img = cv2.imread(sub_img_path)
+    img_path = 'C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\\One Infrared.jpg'
+    orb =  cv2.ORB_create()
+    img = cv2.imread(img_path)
 
     kp, des = orb.detectAndCompute(img, None)
 
     print kp
     print des
 
-def apply_border(img, points, color=None, border=None):
-
-    if color is None:
-        color =(255,0,0)
-    if border is None:
-        border = 3
+def apply_border(img, points, color=(255,0,0), border=3):
 
     draw = ImageDraw.Draw(img)
 
@@ -101,12 +97,12 @@ def main():
     im2.show()
     im2.save(res_img_path)
 
-    img_out = apply_border(im2, points=[top_left, top_right, bottom_right, bottom_left], color=(255,0,0), border=3)
+    img_out = apply_border(im2, points=[top_left, top_right, bottom_right, bottom_left])
     img_out.show()
 
 if __name__ == '__main__':
 
-    feature_detection()
+    main()
 
     sys.exit(0)
 
