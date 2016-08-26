@@ -55,25 +55,18 @@ class location_finder:
 
     def exe(self, width_lim, height_lim):
 
-        max_matches = (self.sub_img.size[0] * 2) + (self.sub_img.size[1] * 2)
-        print "max matches", max_matches
+        lim_matches = (self.sub_img.size[0] * 2) + (self.sub_img.size[1] * 2)
 
         for i in range(1, width_lim):
             for j in range(1, height_lim):
                 cur_matches = self.strat(self, col=i, row=j)
-                result_ratio = cur_matches / max_matches
+                result_ratio = cur_matches / lim_matches
                 if result_ratio >= self.minimum_precision:
                     print "match found!", cur_matches, " at ", i, j
-                    return cur_matches, max_matches, result_ratio, i, j
-
-        # lis = []
-        # for i in range(0, width_lim):
-        #     for j in range(0, height_lim):
-        #         res = self.strat(self, col=i, row=j)
-        #         lis.append((res, i, j))
-        #
-        # lis.sort(key=lambda tup: tup[0], reverse=True)
-        # return lis[0][0], lis[0][1], lis[0][2]
+                    return cur_matches, lim_matches, result_ratio, i, j
+            sys.stdout.write('.')
+            sys.stdout.flush()
+        print "\n"
 
     def border_check(self, col=0, row=0):
 
@@ -115,6 +108,8 @@ def show_and_wait(file):
 
 def main(zoom_factor, minimum_precision, verbose=False, x_offset=0, y_offset=0):
 
+    print "Trying Degree of Precision", minimum_precision * 100
+
     inp_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', 'mt_mckinley.jpg')
     out_sub_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'result_sub.jpg')
     out_tot_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'result_tot.jpg')
@@ -137,6 +132,15 @@ def main(zoom_factor, minimum_precision, verbose=False, x_offset=0, y_offset=0):
     # prepare the sub_img by first un_zooming, then applying generate lines, then cropping to fit image
     #
     un_zoomed = zoomed.crop((0,0, zoomed.size[0] * zoom_factor, zoomed.size[1] * zoom_factor)).resize(img.size, Image.ANTIALIAS)
+
+    #
+    # Check for inappropriate x / y offset
+    if x_offset > img.size[0] / zoom_factor or y_offset > img.size[1] / zoom_factor:
+        string = "Error, x_offset and y_offset with the sub_img width cannot exceed the size of th e tot_img"
+        string += "\noffsets (x, y): " + str(x_offset) + ", " + str(y_offset)
+        string += "\ntot img crop lim: " + str(img.size[0] / zoom_factor) + ", " + str(img.size[1] / zoom_factor)
+        raise AssertionError(string)
+
     if verbose:
         show_and_wait(un_zoomed)
     un_zoomed_lines = generate_lines(un_zoomed)
@@ -153,16 +157,20 @@ def main(zoom_factor, minimum_precision, verbose=False, x_offset=0, y_offset=0):
     width_lim = img_lines.size[0] - un_zoomed_lines_crop.size[0]
     height_lim = img_lines.size[1] - un_zoomed_lines_crop.size[1]
 
-    loc_find = location_finder(tot_img=img_lines, sub_img=un_zoomed_lines_crop, minimum_precision=minimum_precision, strat=location_finder.border_check)
-    current_matches, max_matches, result_matches, x, y = loc_find.exe(width_lim, height_lim)
+    try:
+        loc_find = location_finder(tot_img=img_lines, sub_img=un_zoomed_lines_crop, minimum_precision=minimum_precision, strat=location_finder.border_check)
+        current_matches, max_matches, result_matches, x, y = loc_find.exe(width_lim, height_lim)
+    except Exception as e:
+        raise Exception("Degree of Precision " + str(minimum_precision) + " failed")
 
     print "Succeeded", "number of matches:", current_matches, "of", max_matches, ":", result_matches
-    x, y = x-1, y-1
-    print "imaged sourced at", x, y
+
+    x, y = x-1, y-1 # NOTE at location of x-1, y-1 as we needed to shave this border of the lines photo for erroneous line recognition at the border fo the crop
+
+    print "imaged sourced to", x, y
 
     #
     # overlay image for visual
-    # NOTE at location of x-1, y-1 as we needed to shave this border of the lines photo for erroneous line recognition at the border fo the crop
     #
     img.paste(un_zoomed.crop((0, 0, un_zoomed.size[0] / zoom_factor, un_zoomed.size[1] / zoom_factor)), (x,y))
     img.show()
@@ -195,9 +203,26 @@ def img_explore(x_offset, y_offset):
 
 if __name__ == '__main__':
 
-    x_offset, y_offset = 30, 20
-    main(zoom_factor=2.0, minimum_precision=0.86, verbose=True, x_offset=x_offset, y_offset=y_offset)
+    debug = 0
+
+    ar = numpy.arange(0.91, 0.85, -0.01)
+
+    if not debug:
+        x_offset, y_offset = 0, 0
+    else:
+        x_offset, y_offset = 250, 250
+
+    for pct in ar:
+        try:
+            main(zoom_factor=2.0, minimum_precision=pct, x_offset=x_offset, y_offset=y_offset)
+            sys.exit(0)
+        except AssertionError as e:
+            print e
+            break
+        except Exception as e:
+            print e
+    sys.stderr.write("IMAGE NOT FOUND\n")
+    sys.exit(-1)
 
     # img_explore(0, 0)
 
-    sys.exit(0)
