@@ -2,7 +2,7 @@ from __future__ import division
 from PIL import Image, ImageDraw
 import os, cv2, sys, numpy
 
-def make_zoomed(img, zoom_factor, out=None, x_offset=0, y_offset=0):
+def make_zoomed(img, zoom_factor, x_offset, y_offset, out=None,):
 
     im = Image.open(img)
     crop = im.crop((x_offset, y_offset, (im.size[0] / zoom_factor) + x_offset, (im.size[1] / zoom_factor) + y_offset))
@@ -103,7 +103,17 @@ class location_finder:
 
         return matches
 
-def main(zoom_factor):
+def show_and_wait(file):
+
+    if isinstance(file, basestring):
+        img = cv2.imread(file)
+    else:
+        img = numpy.array(file)
+    cv2.imshow('image', img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+def main(zoom_factor, minimum_precision, verbose=False, x_offset=0, y_offset=0):
 
     inp_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', 'mt_mckinley.jpg')
     out_sub_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'result_sub.jpg')
@@ -112,8 +122,9 @@ def main(zoom_factor):
     #
     # staging testing
     #
-    zoomed = make_zoomed(inp_file, zoom_factor)
-    #zoomed.show()
+    zoomed = make_zoomed(inp_file, zoom_factor, x_offset=x_offset, y_offset=y_offset)
+    if verbose:
+        show_and_wait(zoomed)
 
     #
     # Un-packing image to be used in overlay
@@ -126,11 +137,14 @@ def main(zoom_factor):
     # prepare the sub_img by first un_zooming, then applying generate lines, then cropping to fit image
     #
     un_zoomed = zoomed.crop((0,0, zoomed.size[0] * zoom_factor, zoomed.size[1] * zoom_factor)).resize(img.size, Image.ANTIALIAS)
-    # un_zoomed.show()
+    if verbose:
+        show_and_wait(un_zoomed)
     un_zoomed_lines = generate_lines(un_zoomed)
-    # un_zoomed_lines.show()
+    if verbose:
+        show_and_wait(un_zoomed_lines)
     un_zoomed_lines_crop = un_zoomed_lines.crop((1, 1, (un_zoomed.size[0] / zoom_factor)-1, (un_zoomed.size[1] / zoom_factor)-1))
-    # un_zoomed_crop.show()
+    if verbose:
+        show_and_wait(un_zoomed_lines_crop)
     un_zoomed_lines_crop.save(out_sub_file)
 
     #
@@ -139,46 +153,51 @@ def main(zoom_factor):
     width_lim = img_lines.size[0] - un_zoomed_lines_crop.size[0]
     height_lim = img_lines.size[1] - un_zoomed_lines_crop.size[1]
 
-    loc_find = location_finder(tot_img=img_lines, sub_img=un_zoomed_lines_crop, strat=location_finder.border_check)
+    loc_find = location_finder(tot_img=img_lines, sub_img=un_zoomed_lines_crop, minimum_precision=minimum_precision, strat=location_finder.border_check)
     current_matches, max_matches, result_matches, x, y = loc_find.exe(width_lim, height_lim)
 
     print "Succeeded", "number of matches:", current_matches, "of", max_matches, ":", result_matches
-    print "imaged sourced at", x-1, y-1
+    x, y = x-1, y-1
+    print "imaged sourced at", x, y
 
     #
     # overlay image for visual
     # NOTE at location of x-1, y-1 as we needed to shave this border of the lines photo for erroneous line recognition at the border fo the crop
     #
-    img.paste(un_zoomed.crop((0, 0, un_zoomed.size[0] / zoom_factor, un_zoomed.size[1] / zoom_factor)), (x-1,y-1))
+    img.paste(un_zoomed.crop((0, 0, un_zoomed.size[0] / zoom_factor, un_zoomed.size[1] / zoom_factor)), (x,y))
     img.show()
 
-    img_lines.paste(un_zoomed_lines.crop((0, 0, un_zoomed.size[0] / zoom_factor, un_zoomed.size[1] / zoom_factor)), (x-1,y-1))
+    img_lines.paste(un_zoomed_lines.crop((0, 0, un_zoomed.size[0] / zoom_factor, un_zoomed.size[1] / zoom_factor)), (x,y))
     img_lines.show()
 
     sub_w = un_zoomed.size[0] / zoom_factor
     sub_h = un_zoomed.size[1] / zoom_factor
-    highlighted = apply_border(img, points=[(0, 0), (0, sub_h), (sub_w, sub_h), (sub_w, 0)], border=1)
+    highlighted = apply_border(img, points=[(x, y), (x, sub_h+y), (sub_w+x, sub_h+y), (sub_w+x, y)], border=1)
     highlighted.show()
 
-def img_explore():
+def img_explore(x_offset, y_offset):
 
     inp_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', 'mt_mckinley.jpg')
 
     img = Image.open(inp_file)
-    zoomed = make_zoomed(inp_file, 2.0)
+    zoomed = make_zoomed(inp_file, 2.0, x_offset, y_offset)
 
-    un_zoomed = zoomed.crop((0, 0, zoomed.size[0] * 2.0, zoomed.size[1] * 2.0)).resize(img.size,
-                                                                                                       Image.ANTIALIAS)
+    un_zoomed = zoomed.crop((0, 0, zoomed.size[0] * 2.0, zoomed.size[1] * 2.0)).resize(img.size,Image.ANTIALIAS)
     un_zoomed_crop = un_zoomed.crop(
         (1, 1, (un_zoomed.size[0] / 2.0) - 1, (un_zoomed.size[1] / 2.0) - 1))
 
-    un_zoomed_crop.show()
+    sub_w = un_zoomed.size[0] / 2.0
+    sub_h = un_zoomed.size[1] / 2.0
+    highlighted = apply_border(un_zoomed, points=[(x_offset, y_offset), (x_offset, sub_h + y_offset), (sub_w + x_offset, sub_h + y_offset), (sub_w + x_offset, y_offset)], border=1)
+    highlighted.show()
 
     print "h", un_zoomed_crop.size[1], "w", un_zoomed_crop.size[0]
 
 if __name__ == '__main__':
 
-    main(zoom_factor=2.0)
-    #img_explore()
+    x_offset, y_offset = 30, 20
+    main(zoom_factor=2.0, minimum_precision=0.86, verbose=True, x_offset=x_offset, y_offset=y_offset)
+
+    # img_explore(0, 0)
 
     sys.exit(0)
