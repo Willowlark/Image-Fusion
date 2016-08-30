@@ -11,7 +11,7 @@ def make_zoomed(img, zoom_factor, x_offset, y_offset, out=None,):
         return res
     res.save(out)
 
-def generate_lines(inp, out=None):
+def generate_lines(inp, out=None, as_np_arr=False):
 
     if isinstance(inp, basestring):
         edges = cv2.Canny(cv2.imread(inp), 50, 250, apertureSize=3)
@@ -20,7 +20,10 @@ def generate_lines(inp, out=None):
     im = Image.fromarray(edges)
     im = im.convert("RGB")
     if out is None:
-        return im
+        if as_np_arr:
+            return numpy.array(im)
+        else:
+            return im
     im.save(out)
 
 def apply_border(img, points, color=(255,0,0), border=3, out=None):
