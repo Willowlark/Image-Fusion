@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import cv2
+import sys
 
 help_message = '''
 USAGE: peopledetect.py <image_names> ...
@@ -52,3 +53,6 @@ def detect(inputs):
         if ch == 27:
             break
     cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    detect(sys.argv[1:])
