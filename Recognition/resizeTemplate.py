@@ -19,7 +19,7 @@ template = cv2.imread(args["template"])
 template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
 template = cv2.Canny(template, 50, 200)
 (tH, tW) = template.shape[:2]
-cv2.imshow("Template", template)
+# cv2.imshow("Template", template)
 
 # loop over the images to find the template in
 for imagePath in glob.glob(args["images"]):
@@ -30,7 +30,7 @@ for imagePath in glob.glob(args["images"]):
     found = None
 
     # loop over the scales of the image
-    for scale in np.linspace(0.2, 1.0, 20)[::-1]:
+    for scale in np.linspace(1.0, 3.5, 20)[::-1]:
         # resize the image according to the scale, and keep track
         # of the ratio of the resizing
         resized = imutils.resize(gray, width = int(gray.shape[1] * scale))

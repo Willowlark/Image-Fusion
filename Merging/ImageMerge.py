@@ -226,7 +226,7 @@ class Merger:
         smim = Image.open(smallImage)
         smdata = smim.load()
         xlen, ylen = smim.size
-        result = None
+        result = None 
 
         sides = [[], [], [], []]
 
