@@ -1,8 +1,8 @@
 from __future__ import division
 from pprint import pprint
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from PIL.ExifTags import TAGS
-import math, os, traceback, sys, warnings, json, Console
+import math, os, traceback, sys, warnings, json, Console, subprocess, ntpath
 
 """
 EXAMPLE ARGS
@@ -87,7 +87,7 @@ class Solution:
         #
         # print "obj height px", first.height, "\nimage height px", img_height
 
-        return (first.height, img_height)
+        return first.height, img_height, first.x, first.y
 
     def get_exif(self, path):
         """
@@ -174,7 +174,7 @@ class Primary(Solution):
             test_angle = math.atan(dimensions[0] / self.focal_len)
             dist = float(self.height_object_in_question) / math.tan(test_angle)
 
-            return dist
+            return dist, dimensions[2], dimensions[3]
 
         except Exception as e:
             sys.stderr.write("Primary Method Failed.\n")
@@ -215,7 +215,7 @@ class Secondary(Solution):
             test_angle = math.atan(pix_pct * self.camera_dict[key][0] / self.focal_len)
             dist = float(self.height_object_in_question) / math.tan(test_angle)
 
-            return dist
+            return dist, dimensions[2], dimensions[3]
 
         except Exception as e:
             sys.stderr.write("Secondary Method Failed.\n")
@@ -253,7 +253,7 @@ class Tertiary(Solution):
 
             dist = (self.focal_len * self.height_object_in_question * dimensions[1]) / (
                 dimensions[0] * self.camera_dict[key][0])
-            return dist
+            return dist, dimensions[2], dimensions[3]
 
         except Exception as e:
             sys.stderr.write("Tertiary Method Failed.\n")
@@ -306,6 +306,18 @@ class Macro:
             ret.append((str(c.__class__.__name__), os.path.split(c.obj_file)[1], c.find_distance()))
         return ret
 
+def text_on_image(image, text, location=(0, 0), color=(255,255,255)):
+    """
+    Using ImageDraw, the image can be labeled with a name in the picture
+
+    `path` image to be labeled
+    """
+    img = Image.open(image)
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.truetype("arial.ttf", 20)
+    draw.text(location, text, color, font=font)
+    return img
+
 def main(known_height, method_flags, base_file, infiles):
     """
     run me method for scripting usage
@@ -339,9 +351,20 @@ if __name__ == '__main__':
     directory = os.path.dirname(os.path.realpath(__file__))
 
     infiles = sys.argv[4:]                                                                                              # argv[4:] = all of the files for the script to be run over
-    res = main(known_height=float(sys.argv[1]), method_flags=sys.argv[2], base_file=sys.argv[3], infiles=infiles)       # argv[1] =  0.124, height of object in meters, argv[3] = base image file pathname (absolute)
+    results = main(known_height=float(sys.argv[1]), method_flags=sys.argv[2], base_file=sys.argv[3], infiles=infiles)       # argv[1] =  0.124, height of object in meters, argv[3] = base image file pathname (absolute)
 
     # res is the collection of results of each call ordered first by the method(s) chosen, then by the input files.
-    pprint(res)
+    pprint(results)
+
+    slideshow =[]
+    for res in results[0:3]:
+        image, text, location = os.path.join("Input", res[1]), str(res[2][0]), res[2][1]
+        im = text_on_image(image, text, location, color=(255,0,0))
+        im.save(os.path.join(directory, "slideshow", ntpath.basename(image)))
+        slideshow.append(os.path.join(directory, "slideshow", ntpath.basename(image)))
+
+    for file in slideshow:
+        p = subprocess.Popen(["mspaint.exe", file])
+        p.wait()
 
     sys.exit(0)
