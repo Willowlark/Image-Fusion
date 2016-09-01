@@ -13,11 +13,17 @@ EXAMPLE ARGS
 "first/file/path" = the base file, against which all subsequent files are compared for difference extraction and examination
 "all/subsequent/files/path" = the files wherein the difference to be examined lies
 
+to be used for only the linear debug
+0.124 "L" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
+
 INDEPENDENT CALL EXAMPLE:
 procedure = Primary(base.jpg, input.jpg, 1.82)
 procedure.find_distance()
 """
 
+directory = os.path.dirname(os.path.realpath(__file__))
+
+debug_control_dist = 1.0
 
 class Solution:
     """
@@ -281,10 +287,41 @@ class Quaternary(Solution):
         """
         try:
             dist = self.get_exif(self.obj_file)['SubjectDistance']  # maybe useful, determined from center of focus in digital cameras
-            return dist
+            return dist, None, None
 
         except Exception as e:
             sys.stderr.write("Quaternary Method Failed.")
+            traceback.print_exc()
+
+class Linear(Solution):
+    """
+    The control method of finding object distance
+    Requires only pixel height of image in subject file and control height varaible (heigh_object_in_question)
+    """
+    def __init__(self, base_file=None, obj_file=None, known_height=None, known_dist=None):
+        """
+        constructor for Linear method of execution.
+
+        `base_file` the base file against which the obj_file will be checked and distance solved
+        `obj_file` the file being examined for difference, and determining distance
+        `known_height` the known height in meters of the object in the picture
+        """
+        Solution.__init__(self, base_file, obj_file, known_height)
+        self.known_dist = known_dist
+
+    def find_distance(self):
+        """
+        This method investigates the exif tags to find the SubjectDistance tag that may reveal the concerning information
+
+        """
+        print str(self.__class__.__name__), "Solving..."
+        try:
+            dimensions = self.get_object_height_px(self.base_file, self.obj_file)
+            print dimensions[0], self.height_object_in_question, self.known_dist
+            dist = (dimensions[0] / self.height_object_in_question) * self.known_dist
+            return dist, dimensions[2], dimensions[3]
+        except Exception as e:
+            sys.stderr.write("Linear Method Failed.")
             traceback.print_exc()
 
 class Macro:
@@ -318,7 +355,7 @@ def text_on_image(image, text, location=(0, 0), color=(255,255,255)):
     draw.text(location, text, color, font=font)
     return img
 
-def main(known_height, method_flags, base_file, infiles):
+def run_me(known_height, method_flags, base_file, infiles):
     """
     run me method for scripting usage
     for deployment usage see additional example args at file head
@@ -335,7 +372,7 @@ def main(known_height, method_flags, base_file, infiles):
 
     flags_list = method_flags.split(",")
 
-    configs = {'P':Primary, 'S':Secondary, 'T':Tertiary, 'Q':Quaternary}
+    configs = {'P':Primary, 'S':Secondary, 'T':Tertiary, 'Q':Quaternary, 'L':Linear}
 
     df = Macro()
     for flag in flags_list:
@@ -345,26 +382,67 @@ def main(known_height, method_flags, base_file, infiles):
     results = df.run()
     return results
 
-if __name__ == '__main__':
-    warnings.filterwarnings('ignore')
+def run_me2(known_height, known_dist, method_flags, base_file, infiles):
+    """
+    run me method for scripting usage
+    for deployment usage see additional example args at file head
 
-    directory = os.path.dirname(os.path.realpath(__file__))
+    most useful individual deployment example (see line 325-328)
+    df = Macro(Primary(infile, known_height), Secondary(infile, known_height), Tertiary(infile, known_height))
 
-    infiles = sys.argv[4:]                                                                                              # argv[4:] = all of the files for the script to be run over
-    results = main(known_height=float(sys.argv[1]), method_flags=sys.argv[2], base_file=sys.argv[3], infiles=infiles)       # argv[1] =  0.124, height of object in meters, argv[3] = base image file pathname (absolute)
+    `known_height` the known height in meters of the object in the picture
+    `known_dist` the known distance in meters of the object in the picture
+    `method_flags` the list of flags chosen to denote the choice of method used to solve (P - primary,S -secondary, etc.)
+    `base_file` the base file against which all infiles will be checked and distance solved
+    `infiles` the lis tof file being examined for difference, and determining distance
+    `return` the list of results of upon execution
+    """
+
+    flags_list = method_flags.split(",")
+
+    configs = {'P':Primary, 'S':Secondary, 'T':Tertiary, 'Q':Quaternary, 'L':Linear}
+
+    df = Macro()
+    for flag in flags_list:
+        for obj_file in infiles:
+            df.add(configs[flag.upper()](known_height=known_height, known_dist=known_dist, obj_file=obj_file, base_file=base_file))
+
+    results = df.run()
+    return results
+
+def debug():
+
+    infiles = sys.argv[4:]  # argv[4:] = all of the files for the script to be run over
+    results = run_me2(known_height=float(sys.argv[1]), method_flags=sys.argv[2], base_file=sys.argv[3],
+                     infiles=infiles, known_dist=debug_control_dist)  # argv[1] =  0.124, height of object in meters, argv[3] = base image file pathname (absolute)
 
     # res is the collection of results of each call ordered first by the method(s) chosen, then by the input files.
     pprint(results)
 
-    slideshow =[]
+def main():
+
+    warnings.filterwarnings('ignore')
+
+    infiles = sys.argv[4:]  # argv[4:] = all of the files for the script to be run over
+    results = run_me(known_height=float(sys.argv[1]), method_flags=sys.argv[2], base_file=sys.argv[3],
+                     infiles=infiles)  # argv[1] =  0.124, height of object in meters, argv[3] = base image file pathname (absolute)
+
+    # res is the collection of results of each call ordered first by the method(s) chosen, then by the input files.
+    pprint(results)
+
+    slideshow = []
     for res in results[0:3]:
         image, text, location = os.path.join("Input", res[1]), str(res[2][0]), res[2][1]
-        im = text_on_image(image, text, location, color=(255,0,0))
+        im = text_on_image(image, text, location, color=(255, 0, 0))
         im.save(os.path.join(directory, "slideshow", ntpath.basename(image)))
         slideshow.append(os.path.join(directory, "slideshow", ntpath.basename(image)))
 
     for file in slideshow:
         p = subprocess.Popen(["mspaint.exe", file])
         p.wait()
+
+if __name__ == '__main__':
+
+    main()
 
     sys.exit(0)
