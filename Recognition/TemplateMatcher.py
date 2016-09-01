@@ -5,6 +5,8 @@ import imutils
 import glob
 import cv2
 
+debug = 0
+
 def execute(inImage, inTemplate):
     """
     `Author`: Bill Clark, Adrian Rosebrock
@@ -25,8 +27,8 @@ def execute(inImage, inTemplate):
     """
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("-t", "--template", required=True, help="Path to template image")
-    ap.add_argument("-i", "--image", required=True,
+    ap.add_argument("-t", "--template", help="Path to template image")
+    ap.add_argument("-i", "--image",
         help="Path to images where template will be matched")
     ap.add_argument("-v", "--visualize",
         help="Flag indicating whether or not to visualize each iteration")
@@ -55,7 +57,7 @@ def execute(inImage, inTemplate):
         edged = cv2.Canny(resized, 50, 200)
         result = cv2.matchTemplate(image, edged, cv2.TM_CCOEFF)
         (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
-        print resized.shape[:2], maxLoc[:2], maxVal
+        if debug: print resized.shape[:2], maxLoc[:2], maxVal
 
         if args.get("visualize", False):
             clone = np.dstack([image, image, image])
@@ -65,7 +67,7 @@ def execute(inImage, inTemplate):
 
         if found is None or maxVal > found[0]:
             found = (maxVal, maxLoc, 1, tW, tH)
-        print found[0], '\n'
+        if debug: print found[0], '\n'
 
     (_, maxLoc, r, tW, tH) = found
     (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))

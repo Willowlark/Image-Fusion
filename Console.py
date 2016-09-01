@@ -3,6 +3,7 @@ import re
 
 from Merging import ImageMerge, PixelProcess
 from Recognition import peopledetect
+from Recognition import TemplateMatcher
 
 
 class Console(cmd.Cmd):
@@ -162,7 +163,7 @@ class Console(cmd.Cmd):
         into the other. Source image followed by the smaller, contained template.
         """
         paths = self.splitPaths(images)
-        print self.m.cropFind(paths[0], paths[1])
+        print TemplateMatcher.execute(paths[0], paths[1])
 
     def do_save(self, arg):
         """
