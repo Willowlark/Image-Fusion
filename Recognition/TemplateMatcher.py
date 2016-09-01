@@ -6,6 +6,23 @@ import glob
 import cv2
 
 def execute(inImage, inTemplate):
+    """
+    `Author`: Bill Clark, Adrian Rosebrock
+
+    Inspired by the code located here:
+    http://www.pyimagesearch.com/2015/01/26/multi-scale-template-matching-using-python-opencv/
+    This module implements template matching from opencv. What this does is takes an image to
+    use as a template. That image is identified inside of another image which contains a
+    smaller sample of the template. The template maybe any size SMALLER than the image that contains
+    it. This is more advanced than typical template matching because we reduce the template on
+    a scale. This allows us to find smaller versions of the template in the image, such as a zoomed
+    in image's location on a zoomed out of the same subject. This can be seen with input zoom.jpg
+    and out.jpg.
+
+    `inImage`: The image to look for the template in.
+
+    `inTemplate`: The template to look for in the image.
+    """
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-t", "--template", required=True, help="Path to template image")

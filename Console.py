@@ -154,6 +154,15 @@ class Console(cmd.Cmd):
         Given an image thats a subset of this image, find where that image fits into the other."""
         paths = self.splitPaths(images)
         print self.m.cropFind(paths[0], paths[1])
+    def do_templatematch(self, images):
+        """
+        `Author`: Bill Clark
+
+        Given an image which contains a second, smaller image, find where the smaller image fits
+        into the other. Source image followed by the smaller, contained template.
+        """
+        paths = self.splitPaths(images)
+        print self.m.cropFind(paths[0], paths[1])
 
     def do_save(self, arg):
         """
