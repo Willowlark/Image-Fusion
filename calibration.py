@@ -1,15 +1,15 @@
 from __future__ import division
-import sys, json, os, math, PixelProcess, ImageMerge
+import sys, json, os, math
 from PIL import Image
-
-from Merging import ImageMerge, PixelProcess
+import Console
+from pprint import pprint
 
 """
 The main function of this script will write to the fixed location file, json/calib_info.json, the information pertinent to the distance_finder.py module
 By running the main script on the example arguments specified below will yield the calib_json file to store the focal_length info to be accessed by distance_finder.py.
 
 Example ARGS:
-"/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_base.jpg" "/Users/robertseedorf/PycharmProjects/Image-Fusion/Input/IMG_calib.jpg" 0.124 1.0
+"C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_calib.jpg" 0.124 1.0
 
 ...produces JSON of following format:
 {
@@ -103,7 +103,8 @@ def run_me():
                         "dist_object_in_question" : dist_object_in_question,
                        "base_image" : base_image,
                         "calibration_image" : calib_image,
-                       "focal_len" : focal_len}, fp, indent=4)
+                       "focal_len" : focal_len,
+                       "control_object_height_px" : object_height_px}, fp, indent=4)
 
     else:
         object_height_px = float(sys.argv[1])
