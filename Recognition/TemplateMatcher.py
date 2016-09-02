@@ -5,9 +5,9 @@ import imutils
 import glob
 import cv2
 
-debug = 0
+debug = 1
 
-def execute(inImage, inTemplate):
+def execute(inImage, inTemplate, linTop):
     """
     `Author`: Bill Clark, Adrian Rosebrock
 
@@ -46,7 +46,7 @@ def execute(inImage, inTemplate):
     (origTW, origTH) = template.shape[:2]
     found = None
 
-    for scale in np.linspace(0.28, 1.0, 20)[::-1]:
+    for scale in np.linspace(0.2, linTop, 20)[::-1]:
         resized = imutils.resize(template, width = (int(template.shape[1]*scale)))
         # r = template.shape[1] / float(resized.shape[1])
         (tW, tH) = resized.shape[:2]
@@ -63,7 +63,7 @@ def execute(inImage, inTemplate):
             clone = np.dstack([image, image, image])
             cv2.rectangle(clone, (maxLoc[0], maxLoc[1]), (maxLoc[0] + tW, maxLoc[1] + tH), (0, 0, 255), 2)
             cv2.imshow("Visualize", clone)
-            # cv2.waitKey(0)
+            cv2.waitKey(0)
 
         if found is None or maxVal > found[0]:
             found = (maxVal, maxLoc, 1, tW, tH)
@@ -78,4 +78,5 @@ def execute(inImage, inTemplate):
     cv2.waitKey(0)
 
 if __name__ == "__main__":
-    execute(None, None)
+    execute(None, None, 1.0)
+    execute(None, None, 0.5)

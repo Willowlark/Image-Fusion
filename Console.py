@@ -163,7 +163,8 @@ class Console(cmd.Cmd):
         into the other. Source image followed by the smaller, contained template.
         """
         paths = self.splitPaths(images)
-        print TemplateMatcher.execute(paths[0], paths[1])
+        TemplateMatcher.execute(paths[0], paths[1], 1.0)
+        TemplateMatcher.execute(paths[0], paths[1], 0.5)
 
     def do_save(self, arg):
         """
