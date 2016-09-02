@@ -2,7 +2,7 @@ from __future__ import division
 from pprint import pprint
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ExifTags import TAGS
-import math, os, traceback, sys, warnings, json, Console, subprocess, ntpath
+import math, os, traceback, sys, warnings, json, Console, subprocess, ntpath, cv2, numpy
 
 """
 EXAMPLE ARGS
@@ -321,12 +321,13 @@ class Linear(Solution):
 
     def find_distance(self):
         """
-        This method investigates the exif tags to find the SubjectDistance tag that may reveal the concerning information
+        This method uses the linear relationship of heights to find the distance
 
         """
         print str(self.__class__.__name__), "Solving..."
         try:
             dimensions = self.get_object_height_px(self.base_file, self.obj_file)
+            ppx_per_meter = self.known_height_px / self.height_object_in_question
             dist = (self.known_height_px / dimensions[0]) * self.known_dist
             return dist, dimensions[2], dimensions[3]
         except Exception as e:
@@ -403,7 +404,7 @@ def main():
     pprint(results)
 
     slideshow = []
-    for res in results[0:3]:
+    for res in results[0:4]:       # for just linear: results[-3:]
         image, text, location = os.path.join("Input", res[1]), str(res[2][0]), res[2][1]
         im = text_on_image(image, text, location, color=(255, 0, 0))
         im.save(os.path.join(directory, "slideshow", ntpath.basename(image)))
