@@ -31,7 +31,7 @@ Example ARGS:
 }
 """
 
-directory = os.path.dirname(os.path.realpath(__file__))
+directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 calib_file = os.path.join(directory, 'json', 'calib_info.json')  # destination of calibration storage
 
 def find_object_px(base_file, obj_file):

@@ -2,7 +2,7 @@ from __future__ import division
 from pprint import pprint
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ExifTags import TAGS
-import math, os, traceback, sys, warnings, json, Console, subprocess, ntpath, cv2, numpy
+import math, os, traceback, sys, warnings, json, Console, subprocess, ntpath
 
 """
 EXAMPLE ARGS
@@ -21,7 +21,7 @@ procedure = Primary(base.jpg, input.jpg, 1.82)
 procedure.find_distance()
 """
 
-directory = os.path.dirname(os.path.realpath(__file__))
+directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 class Solution:
     """
@@ -49,7 +49,6 @@ class Solution:
         self.height_object_in_question = known_height
         self.focal_len = None
 
-        directory = os.path.dirname(os.path.realpath(__file__))
         with open(os.path.join(directory, 'json', 'cameras.json'), 'r') as data_file:
             data = json.load(data_file)
             self.camera_dict = data
@@ -405,7 +404,7 @@ def main():
 
     slideshow = []
     for res in results[0:4]:       # for just linear: results[-3:]
-        image, text, location = os.path.join("Input", res[1]), str(res[2][0]), res[2][1]
+        image, text, location = os.path.join(directory, "Input", res[1]), str(res[2][0]), res[2][1]
         im = text_on_image(image, text, location, color=(255, 0, 0))
         im.save(os.path.join(directory, "slideshow", ntpath.basename(image)))
         slideshow.append(os.path.join(directory, "slideshow", ntpath.basename(image)))
@@ -417,5 +416,4 @@ def main():
 if __name__ == '__main__':
 
     main()
-
     sys.exit(0)
