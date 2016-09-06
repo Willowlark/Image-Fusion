@@ -4,6 +4,7 @@ import re
 from Merging import ImageMerge, PixelProcess
 from Recognition import peopledetect
 from Recognition import TemplateMatcher
+from Recognition import Shift
 
 
 class Console(cmd.Cmd):
@@ -165,6 +166,15 @@ class Console(cmd.Cmd):
         paths = self.splitPaths(images)
         TemplateMatcher.execute(paths[0], paths[1], 1.0)
         TemplateMatcher.execute(paths[0], paths[1], 0.5)
+    def do_pixelshift(self, images):
+        """
+        `Author`: Bill Clark
+
+        Given two images, try and find the direction in which one image was shifted from the other.
+        Allows for one image to be associated with another than is panned from the first.
+        """
+        paths = self.splitPaths(images)
+        Shift.main(paths[0], paths[1])
 
     def do_save(self, arg):
         """
