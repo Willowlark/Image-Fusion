@@ -2,22 +2,22 @@ from __future__ import division
 from pprint import pprint
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ExifTags import TAGS
-import math, os, traceback, sys, warnings, json, Console, subprocess, ntpath
+import math, os, traceback, sys, warnings, json, Console, subprocess, ntpath, argparse
 
 """
-EXAMPLE ARGS
-1.82 "P,S,T" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
+EXAMPLE ARGS:
+--known_height_m 1.82 --methods P S T --base "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" --files "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
 
-1.82 = the actual height of the object whose distance is being sought, in meters
-"P,S,T" = the argument list of the methods chosen to be applied during the distance solving process, as denoted by the first letter of the name. comma delimited list
-"first/file/path" = the base file, against which all subsequent files are compared for difference extraction and examination
-"all/subsequent/files/path" = the files wherein the difference to be examined lies
+--known_height_m = the actual height of the object whose distance is being sought, in meters
+--methods = the argument list of the methods chosen to be applied during the distance solving process, as denoted by the first letter of the name. comma delimited list
+--base = the base file, against which all subsequent files are compared for difference extraction and examination
+--files = the file(s) wherein the difference to be examined lies, must be at least one
 
-to be used for only the linear debug
-0.124 "L" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
+ANOTHER COMMAND LINE EXAMPLE:
+--known_height_m 0.124 --methods L --base "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" --files "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
 
 INDEPENDENT CALL EXAMPLE:
-procedure = Primary(base.jpg, input.jpg, 1.82)
+procedure = Primary(base_file=base.jpg, obj_file=input.jpg, known_height=1.82)
 procedure.find_distance()
 """
 
@@ -364,6 +364,17 @@ def text_on_image(image, text, location=(0, 0), color=(255,255,255)):
     draw.text(location, text, color, font=font)
     return img
 
+def parse_args():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--known_height_m", type=float, required=True, help="the known height of the object being investigated, in meters")
+    ap.add_argument("--methods", nargs='+', required=False, help="(P,S,T,Q, or L) the method(s) chosen to be applied for investigation, if none is chosen default is Linear")
+    ap.add_argument("--base", metavar="FILE",
+                    required=True, help="base image file for image merge")
+    ap.add_argument("--files", nargs='+', metavar="FILE", required=True,
+                    help="The list of files to be merged against base, the distance of the highlight in each will be found")
+    args = ap.parse_args()
+    return args
+
 def run_me(known_height, method_flags, base_file, infiles):
     """
     run me method for scripting usage
@@ -379,31 +390,30 @@ def run_me(known_height, method_flags, base_file, infiles):
     `return` the list of results of upon execution
     """
 
-    flags_list = method_flags.split(",")
-
-    configs = {'P':Primary, 'S':Secondary, 'T':Tertiary, 'Q':Quaternary, 'L':Linear}
-
+    configs = {'P': Primary, 'S': Secondary, 'T': Tertiary, 'Q': Quaternary, 'L': Linear}
     df = Macro()
-    for flag in flags_list:
+    for flag in method_flags:
         for obj_file in infiles:
             df.add(configs[flag.upper()](known_height=known_height, obj_file=obj_file, base_file=base_file))
 
     results = df.run()
-    return results
+    return list(results)
 
 def main():
 
     warnings.filterwarnings('ignore')
 
-    infiles = sys.argv[4:]  # argv[4:] = all of the files for the script to be run over
-    results = run_me(known_height=float(sys.argv[1]), method_flags=sys.argv[2], base_file=sys.argv[3],
-                     infiles=infiles)  # argv[1] =  0.124, height of object in meters, argv[3] = base image file pathname (absolute)
+    args = parse_args()
+    for arg in vars(args):
+        print arg, getattr(args, arg)
 
-    # res is the collection of results of each call ordered first by the method(s) chosen, then by the input files.
+    files = args.files
+    results = run_me(known_height=args.known_height_m, method_flags=args.methods, base_file=args.base,infiles=files)
+    # results is the collection of results of each call ordered first by the method(s) chosen, then by the input files.
     pprint(results)
 
     slideshow = []
-    for res in results[0:4]:       # for just linear: results[-3:]
+    for res in results[0:3]:
         image, text, location = os.path.join(directory, "Input", res[1]), str(res[2][0]), res[2][1]
         im = text_on_image(image, text, location, color=(255, 0, 0))
         im.save(os.path.join(directory, "slideshow", ntpath.basename(image)))
