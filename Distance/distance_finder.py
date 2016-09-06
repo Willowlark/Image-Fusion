@@ -134,7 +134,9 @@ class Solution:
         """
         inherited method to be used by each subclass in a particular way
 
-        `return` distance, in meters of object from aperture, if solution available, else None
+        `return` dist - the discovered distance that is the result of the procedure
+                dimension[2] - the location of x coordinates that are the far left and right most pixels of difference
+                dimension[3] - the location of y coordinates that are the far left and right most pixels of difference
         """
         pass
 
@@ -172,6 +174,10 @@ class Primary(Solution):
 
         Using the math library, the arctangent of the height of the object in pixels divided byt he determined focal_length to find the angle of refraction, of the light through the lens.
         This angle is used with the known height of the object to find distance using the property of tangent(angle) = opposite / adjacent
+
+        `return` dist - the discovered distance that is the result of the procedure
+                dimension[2] - the location of x coordinates that are the far left and right most pixels of difference
+                dimension[3] - the location of y coordinates that are the far left and right most pixels of difference
         """
         print str(self.__class__.__name__), "Solving..."
         try:
@@ -207,6 +213,10 @@ class Secondary(Solution):
 
         Using the math library, the arctangent of the height of the object in pixels divided byt he determined focal_length to find the angle of refraction, of the light through the lens.
         This angle is used with the known height of the object to find distance using the property of tangent(angle) = opposite / adjacent
+
+        `return` dist - the discovered distance that is the result of the procedure
+                dimension[2] - the location of x coordinates that are the far left and right most pixels of difference
+                dimension[3] - the location of y coordinates that are the far left and right most pixels of difference
         """
         print str(self.__class__.__name__), "Solving..."
         try:
@@ -248,8 +258,10 @@ class Tertiary(Solution):
 
         Using the math library, the arctangent of the height of the object in pixels divided byt he determined focal_length to find the angle of refraction, of the light through the lens.
         This angle is used with the known height of the object to find distance using the property of tangent(angle) = opposite / adjacent
-        
-        `return` dist - the discovered distance as the result of the procedure
+
+        `return` dist - the discovered distance that is the result of the procedure
+                dimension[2] - the location of x coordinates that are the far left and right most pixels of difference
+                dimension[3] - the location of y coordinates that are the far left and right most pixels of difference
         """
         print str(self.__class__.__name__), "Solving..."
         try:
@@ -327,6 +339,9 @@ class Linear(Solution):
         """
         This method uses the linear relationship of heights to find the distance
 
+        `return` dist - the discovered distance that is the result of the procedure
+                dimension[2] - the location of x coordinates that are the far left and right most pixels of difference
+                dimension[3] - the location of y coordinates that are the far left and right most pixels of difference
         """
         print str(self.__class__.__name__), "Solving..."
         try:
@@ -368,7 +383,10 @@ def text_on_image(image, text, location=(0, 0), color=(255,255,255)):
     """
     Using ImageDraw, the image can be labeled with a name in the picture
 
-    `path` image to be labeled
+    `image` image to be labeled
+    `text` text tobe drawn on image
+    `location` the pixel coordinates (x, y) that represent the position at which the text will be drawn
+    `color` the color of the text in RGB format of the text being drawn
     """
     img = Image.open(image)
     draw = ImageDraw.Draw(img)
@@ -377,6 +395,12 @@ def text_on_image(image, text, location=(0, 0), color=(255,255,255)):
     return img
 
 def apply_distance_as_text(list):
+    """
+    Method as loop to apply the text to series of images
+
+    `list` the list of images on which the text will be permanently drawn
+    `return` the list of images, as pathnames, where the modified images are stored
+    """
 
     slideshow = []
     for res in list:
@@ -388,8 +412,9 @@ def apply_distance_as_text(list):
 
 def parse_args():
     """
+    Method to parse args from command sys.args. Uses python.argparser
 
-    :return:
+    `return` args, the list of parsed args as a argparser object
     """
     ap = argparse.ArgumentParser()
     ap.add_argument("--known_height_m", type=float, required=True, help="the known height of the object being investigated, in meters")
@@ -426,7 +451,10 @@ def run_me(known_height, method_flags, base_file, infiles):
     return list(results)
 
 def main(begin_index, end_index, render_sw=None):
+    """
+    Main method, intended to parse args and perform operation in order
 
+    """
     warnings.filterwarnings('ignore')
 
     args = parse_args()
@@ -449,5 +477,8 @@ if __name__ == '__main__':
 
     # args to be removed after testing
     render_tool = "mspaint.exe"
-    main(0, 4, render_tool)
+    begin_index = 0
+    end_index = 4
+
+    main(begin_index, end_index, render_tool)
     sys.exit(0)
