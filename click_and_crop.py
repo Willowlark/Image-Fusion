@@ -1,9 +1,6 @@
-# import the necessary packages
 import argparse, cv2, os, sys
 from pprint import pprint
 
-# initialize the list of reference points and boolean indicating
-# whether cropping is being performed or not
 refPt = []
 cropping = False
 image = None
