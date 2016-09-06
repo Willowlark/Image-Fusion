@@ -8,10 +8,10 @@ import math, os, traceback, sys, warnings, json, Console, subprocess, ntpath, ar
 EXAMPLE ARGS:
 --known_height_m 1.82 --methods P S T --base "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" --files "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
 
---known_height_m = the actual height of the object whose distance is being sought, in meters
---methods = the argument list of the methods chosen to be applied during the distance solving process, as denoted by the first letter of the name. comma delimited list
---base = the base file, against which all subsequent files are compared for difference extraction and examination
---files = the file(s) wherein the difference to be examined lies, must be at least one
+--known_height_m    = the actual height of the object whose distance is being sought, in meters
+--methods           = the argument list of the methods chosen to be applied during the distance solving process, as denoted by the first letter of the name. comma delimited list
+--base              = the base file, against which all subsequent files are compared for difference extraction and examination
+--files             = the file(s) wherein the difference to be examined lies, must be at least one
 
 ANOTHER COMMAND LINE EXAMPLE:
 --known_height_m 0.124 --methods L --base "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" --files "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
@@ -54,6 +54,14 @@ class Solution:
             self.camera_dict = data
 
     def config(self, base_file, obj_file, known_height):
+        """
+        Method used for latent assignmetn of crucial fields, before running investigative process
+
+        `base_file` the base file against which the obj_file will be checked and distance solved
+        `obj_file` the file being examined for difference, and determining distance
+        `known_height` the known height in meters of the object in the picture
+        `return` the instance of class 'self' that now holds states for aforementioned fields
+        """
         self.base_file = base_file
         self.obj_file = obj_file
         self.height_object_in_question = known_height
@@ -67,6 +75,8 @@ class Solution:
         `path` the path to the image file being investigated
         `return` (obj_height, img_height) the height of the object in px, and the height of the image in pixels
         """
+
+        # the following are console commands to employ image merge
         im = Image.open(obj_file)
         img_width, img_height = im.size
 
@@ -81,14 +91,6 @@ class Solution:
         consolas.do_gengroups(None)
         consolas.do_countsortgroups(None)
         first = consolas.groups.first()
-
-        # print "object @", first
-        # ratio = first.height / Image.open(base_file).height
-        # print Image.open(base_file).height
-        # print "pct of height", ratio
-        #
-        #
-        # print "obj height px", first.height, "\nimage height px", img_height
 
         return first.height, img_height, first.x, first.y
 
@@ -131,6 +133,7 @@ class Solution:
     def find_distance(self):
         """
         inherited method to be used by each subclass in a particular way
+
         `return` distance, in meters of object from aperture, if solution available, else None
         """
         pass
@@ -245,6 +248,8 @@ class Tertiary(Solution):
 
         Using the math library, the arctangent of the height of the object in pixels divided byt he determined focal_length to find the angle of refraction, of the light through the lens.
         This angle is used with the known height of the object to find distance using the property of tangent(angle) = opposite / adjacent
+        
+        `return` dist - the discovered distance as the result of the procedure
         """
         print str(self.__class__.__name__), "Solving..."
         try:
