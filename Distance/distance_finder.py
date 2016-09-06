@@ -349,7 +349,14 @@ class Macro:
     def run(self):
         ret = []
         for c in self.commands:
-            ret.append((str(c.__class__.__name__), os.path.split(c.obj_file)[1], c.find_distance()))
+            entry = {}
+            dist, loc_x, loc_y = c.find_distance()
+            entry['Method'] = str(c.__class__.__name__)
+            entry['File'] = c.obj_file
+            entry['Distance'] = dist
+            entry['loc_x'] = loc_x
+            entry['loc_y'] = loc_y
+            ret.append(entry)
         return ret
 
 def text_on_image(image, text, location=(0, 0), color=(255,255,255)):
@@ -364,7 +371,21 @@ def text_on_image(image, text, location=(0, 0), color=(255,255,255)):
     draw.text(location, text, color, font=font)
     return img
 
+def apply_distance_as_text(list):
+
+    slideshow = []
+    for res in list:
+        image, text, location = res['File'], str(res['Distance']), res['loc_x']
+        im = text_on_image(image, text, location, color=(255, 0, 0))
+        im.save(os.path.join(directory, "slideshow", ntpath.basename(image)))
+        slideshow.append(os.path.join(directory, "slideshow", ntpath.basename(image)))
+    return slideshow
+
 def parse_args():
+    """
+
+    :return:
+    """
     ap = argparse.ArgumentParser()
     ap.add_argument("--known_height_m", type=float, required=True, help="the known height of the object being investigated, in meters")
     ap.add_argument("--methods", nargs='+', required=False, help="(P,S,T,Q, or L) the method(s) chosen to be applied for investigation, if none is chosen default is Linear")
@@ -399,31 +420,29 @@ def run_me(known_height, method_flags, base_file, infiles):
     results = df.run()
     return list(results)
 
-def main():
+def main(begin_index, end_index, render_sw=None):
 
     warnings.filterwarnings('ignore')
 
     args = parse_args()
+    print 'Args:'
     for arg in vars(args):
-        print arg, getattr(args, arg)
+        print '\t', arg, getattr(args, arg)
 
     files = args.files
     results = run_me(known_height=args.known_height_m, method_flags=args.methods, base_file=args.base,infiles=files)
-    # results is the collection of results of each call ordered first by the method(s) chosen, then by the input files.
+
+    print 'Results:'
     pprint(results)
 
-    slideshow = []
-    for res in results[0:3]:
-        image, text, location = os.path.join(directory, "Input", res[1]), str(res[2][0]), res[2][1]
-        im = text_on_image(image, text, location, color=(255, 0, 0))
-        im.save(os.path.join(directory, "slideshow", ntpath.basename(image)))
-        slideshow.append(os.path.join(directory, "slideshow", ntpath.basename(image)))
-
-    for file in slideshow:
-        p = subprocess.Popen(["mspaint.exe", file])
-        p.wait()
+    if render_sw is not None:
+        for file in apply_distance_as_text(results[begin_index:end_index]):
+            p = subprocess.Popen([render_sw, file])
+            p.wait()
 
 if __name__ == '__main__':
 
-    main()
+    # args to be removed after testing
+    render_tool = "mspaint.exe"
+    main(0, 4, render_tool)
     sys.exit(0)
