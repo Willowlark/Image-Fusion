@@ -4,6 +4,18 @@ from PIL import Image, ImageDraw, ImageFont
 from PIL.ExifTags import TAGS
 import math, os, traceback, sys, warnings, json, Console, subprocess, argparse
 
+class color:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
+
 """
 EXAMPLE ARGS:
 --known_height_m 1.82 --methods P S T --base "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" --files "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
@@ -55,7 +67,7 @@ class Solution:
 
     def config(self, base_file, obj_file, known_height):
         """
-        Method used for latent assignmetn of crucial fields, before running investigative process
+        Method used for latent assignment of crucial fields, before running investigative process
 
         `base_file` the base file against which the obj_file will be checked and distance solved
         `obj_file` the file being examined for difference, and determining distance
@@ -466,8 +478,12 @@ def main(begin_index, end_index, render_sw=None):
     files = args.files
     results = run_me(known_height=args.known_height_m, method_flags=args.methods, base_file=args.base,infiles=files)
 
-    print 'Results:'
-    pprint(results)
+    print '\n', color.UNDERLINE, 'Results:', ' ' * 50, color.END, '\n'
+    for dict in results:
+        key, val = dict.items()[0]
+        print color.UNDERLINE, key, ':', val, 'meters', color.END
+        for key, val in dict.items()[1:]:
+           print '\t', key, ':', val
 
     if render_sw is not None:
         for file in apply_distance_as_text(results[begin_index:end_index]):
