@@ -2,7 +2,7 @@ from __future__ import division
 from pprint import pprint
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ExifTags import TAGS
-import math, os, traceback, sys, warnings, json, Console, subprocess, ntpath, argparse
+import math, os, traceback, sys, warnings, json, Console, subprocess, argparse
 
 """
 EXAMPLE ARGS:
@@ -402,12 +402,13 @@ def apply_distance_as_text(list):
     `return` the list of images, as pathnames, where the modified images are stored
     """
 
+    directory = os.path.dirname(os.path.realpath(__file__))
     slideshow = []
     for res in list:
         image, text, location = res['File'], str(res['Distance']), res['loc_x']
         im = text_on_image(image, text, location, color=(255, 0, 0))
-        im.save(os.path.join(directory, "slideshow", ntpath.basename(image)))
-        slideshow.append(os.path.join(directory, "slideshow", ntpath.basename(image)))
+        im.save(os.path.join(directory, "slideshow", os.path.basename(image)))
+        slideshow.append(os.path.join(directory, "slideshow", os.path.basename(image)))
     return slideshow
 
 def parse_args():
@@ -478,7 +479,7 @@ if __name__ == '__main__':
     # args to be removed after testing
     render_tool = "mspaint.exe"
     begin_index = 0
-    end_index = 4
+    end_index = 3
 
     main(begin_index, end_index, render_tool)
     sys.exit(0)
