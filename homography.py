@@ -1,9 +1,17 @@
-import cv2, os, PIL, ntpath, ImageMerge, PixelProcess, images2gif, Console
+import ntpath
+import os
+from Tkinter import *
+from pprint import pprint
+
+import PIL
+import cv2
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw
-from pprint import pprint
-from Tkinter import *
-from gif_player import gifPlayer
+
+import Console
+from gif_related import images2gif
+from gif_related.gif_player import gifPlayer
+
 
 class Homography():
     """
