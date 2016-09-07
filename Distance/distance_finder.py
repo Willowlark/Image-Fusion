@@ -2,7 +2,9 @@ from __future__ import division
 from pprint import pprint
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ExifTags import TAGS
-import math, os, traceback, sys, warnings, json, Console, subprocess, argparse
+import math, os, traceback, sys, warnings, json, Console, subprocess, argparse, itertools, cv2
+from os import listdir
+from os.path import isfile, join
 
 class color:
    PURPLE = '\033[95m'
@@ -485,10 +487,19 @@ def main(begin_index, end_index, render_sw=None):
         for key, val in dict.items()[1:]:
            print '\t', key, ':', val
 
-    if render_sw is not None:
-        for file in apply_distance_as_text(results[begin_index:end_index]):
-            p = subprocess.Popen([render_sw, file])
-            p.wait()
+    directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    folder = os.path.join(directory, 'Distance', 'slideshow')
+
+    images = [f for f in listdir(folder) if isfile(join(folder, f))]
+    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+
+    execfile("C:\Users\Bob S\PycharmProjects\Image-Fusion\other_tools\slideshow.py")
+
+
+    # if render_sw is not None:
+    #     for file in apply_distance_as_text(results[begin_index:end_index]):
+    #         p = subprocess.Popen([render_sw, file])
+    #         p.wait()
 
 if __name__ == '__main__':
 

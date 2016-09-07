@@ -8,11 +8,12 @@ folder = os.path.join(directory, 'Distance', 'slideshow')
 images = [f for f in listdir(folder) if isfile(join(folder, f))]
 cv2.namedWindow('image', cv2.WINDOW_NORMAL)
 
-images = itertools.cycle(images)
-for image in images:
 
-    img = cv2.imread(folder+"/"+image)
-    cv2.imshow('image',img)
+done = False
+for image in itertools.cycle(images):
+
+    img = cv2.imread(folder + "/" + image)
+    cv2.imshow('image', img)
 
     while True:
         key = cv2.waitKey(1) & 0xFF
@@ -22,4 +23,7 @@ for image in images:
 
         if key == ord("q"):
             cv2.destroyAllWindows()
-            sys.exit(0)
+            done = True
+            break
+    if done:
+        break
