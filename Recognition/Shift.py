@@ -22,6 +22,32 @@ def tupleCompare(t, tt):
 
 
 def main(image1, image2, accuracy=3, centers=5):
+    """
+    `Author`: Bill Clark
+
+    This module provides a way to compare two images such that, if one is a shifted image
+    of the other, it will be identified. A shifted image is defined as an image that is identical
+    if the other image is moved in the same direction. Another example would be it can identify
+    the similar areas of a panned image.
+    This is done by looking at Variable Centers squared locations. At each location, the center
+    point of the original image is compared with the region around that center. This size of this
+    region is controlled by the Variable Accuracy. With an accuracy of 1, each point checks
+    a nine by nine area, with the location as the center point. The accuracy controls how far that
+    square will expand.
+    The similarity of the pixels is judged and recorded, and then after checking each point,
+    the different locations are merged together. Each top left point is merged with each location's
+    top left point, etc. This provides the user with numerical estimations of the similiarity in
+    that direction. This final data set can be used to predict how the original image must be
+    shifted to achieve similarity.
+
+    `image1`: The first image. This image will only have the center most pixel examined.
+
+     `image2`: The second image, this image will have a region of pixels looked at.
+
+     `Accuracy`: Determines the size of the region to look in around each location.
+
+     `centers`: Determines the number of locations to study.
+    """
     # Accuracy is the number of pixels to check out from the center point, in each direction.
     # Centers is the number of center points to check on each access, so centers^2 points are chosen.
     #load images

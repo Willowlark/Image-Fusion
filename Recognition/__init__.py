@@ -1,3 +1,5 @@
 import peopledetect
+import Shift
+import TemplateMatcher
 
-all = ['peopledetect']
+__all__ = ['peopledetect', 'Shift', 'TemplateMatcher']
