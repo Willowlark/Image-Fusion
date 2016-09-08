@@ -33,7 +33,7 @@ def apply_border(img, points, color=(255,0,0), border=3):
 
     return img
 
-def main():
+def main(demo=None):
 
     sub_img = cv2.imread(sub_img_path)
     tot_img = cv2.imread(base_img_path)
@@ -41,7 +41,6 @@ def main():
     ############################
 
     im = Image.open(sub_img_path)
-    #im.show()
 
     top_left = [0,0]
     top_right = [im.size[0],0]
@@ -50,11 +49,13 @@ def main():
 
     pts_base = np.array([top_left, top_right, bottom_right, bottom_left])
 
-    #raw_input("Press Enter to continue...")
+    if demo:
+        im.show()
+        raw_input("Press Enter to continue...")
 
     ##############################
 
-    #Image.open(base_img_path).show()
+    im = Image.open(base_img_path)
 
     top_left = [70, 129]
     top_right = [170, 216]
@@ -63,7 +64,9 @@ def main():
 
     pts_moded = np.array([top_left, top_right, bottom_right, bottom_left])
 
-    #raw_input("Press Enter to continue...")
+    if demo:
+        im.show()
+        raw_input("Press Enter to continue...")
 
     ##############################
 
@@ -74,9 +77,10 @@ def main():
     cv2.imwrite(res_img_path, im_out)
 
     im1 = Image.open(res_img_path)
-    #im1.show()
 
-    #raw_input("Press Enter to continue...")
+    if demo:
+        im1.show()
+        raw_input("Press Enter to continue...")
 
     #############################
 
@@ -100,9 +104,11 @@ def main():
     img_out = apply_border(im2, points=[top_left, top_right, bottom_right, bottom_left])
     img_out.show()
 
+    raw_input("Press Enter to finish...")
+
 if __name__ == '__main__':
 
-    main()
+    main(demo=1)
 
     sys.exit(0)
 
