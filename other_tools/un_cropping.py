@@ -1,5 +1,5 @@
 from __future__ import division
-from PIL import Image, ImageOps, ImageFilter
+from PIL import Image, ImageOps
 import os, sys, time
 
 def find_loc_double_check(original, img):

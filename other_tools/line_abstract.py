@@ -3,6 +3,9 @@ from matplotlib import pyplot as plt
 import PIL, os
 from PIL import Image
 from PIL import ImageFilter
+from Merging.ImageMerge import *
+from Merging.PixelProcess import *
+import Console
 
 def non_open_cv_method():
     img_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input', 'Two Infrared test.png')
@@ -25,15 +28,41 @@ def open_cv_method():
     edges = cv2.Canny(img, 50, 250, apertureSize = 3)
 
     im = Image.fromarray(edges)
-    im.show()
+     # im.show()
     im.save('Output/dump.png')
 
 def test_open_cv():
 
+    inp1_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'dump.jpg')
+    inp2_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'black.jpg')
+
     img = cv2.imread('Input/Two Infrared.jpg')
 
-    image, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    edges = cv2.Canny(img, 50, 250, apertureSize=3)
 
-    cnt = contours[4]
+    im = Image.fromarray(edges)
+    im = im.convert("RGB")
+    im.save(inp1_file)
 
-    img = cv2.drawContours(img, [cnt], 0, (0, 255, 0), 3)
+    temp = Image.open(inp1_file)
+
+    img2 = Image.new("RGBA", temp.size)
+    img2.save(inp2_file)
+
+    consolas = Console.Console(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Output', 'ImF.jpg'))
+    consolas.do_extractremote(None)
+    consolas.do_redhighlight(None)
+    consolas.do_colordiff(120)
+
+    consolas.do_merge(inp1_file)
+    consolas.do_merge(inp2_file)
+
+    consolas.do_gengroups(None)
+    consolas.do_countsortgroups(None)
+    f = consolas.groups.first()
+    print f
+
+if __name__ == '__main__':
+
+    test_open_cv()
+
