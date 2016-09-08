@@ -2,7 +2,5 @@
     "height_object_in_question": 0.124, 
     "focal_len": 556.4516129032259, 
     "dist_object_in_question": 1.0, 
-    "control_object_height_px": 69, 
-    "calibration_image": "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_calib.jpg", 
-    "base_image": "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_base.jpg"
+    "control_object_height_px": 69
 }

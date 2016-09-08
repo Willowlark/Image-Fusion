@@ -2,26 +2,40 @@ from __future__ import division
 from pprint import pprint
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ExifTags import TAGS
-import math, os, traceback, sys, warnings, json, Console, subprocess, ntpath, cv2, numpy
+import math, os, traceback, sys, warnings, json, Console, subprocess, argparse, itertools, cv2
+from os import listdir
+from os.path import isfile, join
+
+class color:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
 
 """
-EXAMPLE ARGS
-1.82 "P,S,T" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
+EXAMPLE ARGS:
+--known_height_m 1.82 --methods P S T --base "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" --files "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
 
-1.82 = the actual height of the object whose distance is being sought, in meters
-"P,S,T" = the argument list of the methods chosen to be applied during the distance solving process, as denoted by the first letter of the name. comma delimited list
-"first/file/path" = the base file, against which all subsequent files are compared for difference extraction and examination
-"all/subsequent/files/path" = the files wherein the difference to be examined lies
+--known_height_m    = the actual height of the object whose distance is being sought, in meters
+--methods           = the argument list of the methods chosen to be applied during the distance solving process, as denoted by the first letter of the name. comma delimited list
+--base              = the base file, against which all subsequent files are compared for difference extraction and examination
+--files             = the file(s) wherein the difference to be examined lies, must be at least one
 
-to be used for only the linear debug
-0.124 "L" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_onehalf.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
+ANOTHER COMMAND LINE EXAMPLE:
+--known_height_m 0.124 --methods L --base "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" --files "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
 
 INDEPENDENT CALL EXAMPLE:
-procedure = Primary(base.jpg, input.jpg, 1.82)
+procedure = Primary(base_file=base.jpg, obj_file=input.jpg, known_height=1.82)
 procedure.find_distance()
 """
 
-directory = os.path.dirname(os.path.realpath(__file__))
+directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 class Solution:
     """
@@ -49,12 +63,19 @@ class Solution:
         self.height_object_in_question = known_height
         self.focal_len = None
 
-        directory = os.path.dirname(os.path.realpath(__file__))
         with open(os.path.join(directory, 'json', 'cameras.json'), 'r') as data_file:
             data = json.load(data_file)
             self.camera_dict = data
 
     def config(self, base_file, obj_file, known_height):
+        """
+        Method used for latent assignment of crucial fields, before running investigative process
+
+        `base_file` the base file against which the obj_file will be checked and distance solved
+        `obj_file` the file being examined for difference, and determining distance
+        `known_height` the known height in meters of the object in the picture
+        `return` the instance of class 'self' that now holds states for aforementioned fields
+        """
         self.base_file = base_file
         self.obj_file = obj_file
         self.height_object_in_question = known_height
@@ -68,6 +89,8 @@ class Solution:
         `path` the path to the image file being investigated
         `return` (obj_height, img_height) the height of the object in px, and the height of the image in pixels
         """
+
+        # the following are console commands to employ image merge
         im = Image.open(obj_file)
         img_width, img_height = im.size
 
@@ -82,14 +105,6 @@ class Solution:
         consolas.do_gengroups(None)
         consolas.do_countsortgroups(None)
         first = consolas.groups.first()
-
-        # print "object @", first
-        # ratio = first.height / Image.open(base_file).height
-        # print Image.open(base_file).height
-        # print "pct of height", ratio
-        #
-        #
-        # print "obj height px", first.height, "\nimage height px", img_height
 
         return first.height, img_height, first.x, first.y
 
@@ -132,7 +147,10 @@ class Solution:
     def find_distance(self):
         """
         inherited method to be used by each subclass in a particular way
-        `return` distance, in meters of object from aperture, if solution available, else None
+
+        `return` dist - the discovered distance that is the result of the procedure
+                dimension[2] - the location of x coordinates that are the far left and right most pixels of difference
+                dimension[3] - the location of y coordinates that are the far left and right most pixels of difference
         """
         pass
 
@@ -170,6 +188,10 @@ class Primary(Solution):
 
         Using the math library, the arctangent of the height of the object in pixels divided byt he determined focal_length to find the angle of refraction, of the light through the lens.
         This angle is used with the known height of the object to find distance using the property of tangent(angle) = opposite / adjacent
+
+        `return` dist - the discovered distance that is the result of the procedure
+                dimension[2] - the location of x coordinates that are the far left and right most pixels of difference
+                dimension[3] - the location of y coordinates that are the far left and right most pixels of difference
         """
         print str(self.__class__.__name__), "Solving..."
         try:
@@ -205,6 +227,10 @@ class Secondary(Solution):
 
         Using the math library, the arctangent of the height of the object in pixels divided byt he determined focal_length to find the angle of refraction, of the light through the lens.
         This angle is used with the known height of the object to find distance using the property of tangent(angle) = opposite / adjacent
+
+        `return` dist - the discovered distance that is the result of the procedure
+                dimension[2] - the location of x coordinates that are the far left and right most pixels of difference
+                dimension[3] - the location of y coordinates that are the far left and right most pixels of difference
         """
         print str(self.__class__.__name__), "Solving..."
         try:
@@ -246,6 +272,10 @@ class Tertiary(Solution):
 
         Using the math library, the arctangent of the height of the object in pixels divided byt he determined focal_length to find the angle of refraction, of the light through the lens.
         This angle is used with the known height of the object to find distance using the property of tangent(angle) = opposite / adjacent
+
+        `return` dist - the discovered distance that is the result of the procedure
+                dimension[2] - the location of x coordinates that are the far left and right most pixels of difference
+                dimension[3] - the location of y coordinates that are the far left and right most pixels of difference
         """
         print str(self.__class__.__name__), "Solving..."
         try:
@@ -323,6 +353,9 @@ class Linear(Solution):
         """
         This method uses the linear relationship of heights to find the distance
 
+        `return` dist - the discovered distance that is the result of the procedure
+                dimension[2] - the location of x coordinates that are the far left and right most pixels of difference
+                dimension[3] - the location of y coordinates that are the far left and right most pixels of difference
         """
         print str(self.__class__.__name__), "Solving..."
         try:
@@ -350,20 +383,63 @@ class Macro:
     def run(self):
         ret = []
         for c in self.commands:
-            ret.append((str(c.__class__.__name__), os.path.split(c.obj_file)[1], c.find_distance()))
+            entry = {}
+            dist, loc_x, loc_y = c.find_distance()
+            entry['Method'] = str(c.__class__.__name__)
+            entry['File'] = c.obj_file
+            entry['Distance'] = dist
+            entry['loc_x'] = loc_x
+            entry['loc_y'] = loc_y
+            ret.append(entry)
         return ret
 
 def text_on_image(image, text, location=(0, 0), color=(255,255,255)):
     """
     Using ImageDraw, the image can be labeled with a name in the picture
 
-    `path` image to be labeled
+    `image` image to be labeled
+    `text` text tobe drawn on image
+    `location` the pixel coordinates (x, y) that represent the position at which the text will be drawn
+    `color` the color of the text in RGB format of the text being drawn
     """
     img = Image.open(image)
     draw = ImageDraw.Draw(img)
     font = ImageFont.truetype("arial.ttf", 20)
     draw.text(location, text, color, font=font)
     return img
+
+def apply_distance_as_text(list):
+    """
+    Method as loop to apply the text to series of images
+
+    `list` the list of images on which the text will be permanently drawn
+    `return` the list of images, as pathnames, where the modified images are stored
+    """
+
+    directory = os.path.dirname(os.path.realpath(__file__))
+    slideshow = []
+    for res in list:
+        image, text, location = res['File'], str(res['Distance']), res['loc_x']
+        im = text_on_image(image, text, location, color=(255, 0, 0))
+        im.save(os.path.join(directory, "slideshow", os.path.basename(image)))
+        slideshow.append(os.path.join(directory, "slideshow", os.path.basename(image)))
+    return slideshow
+
+def parse_args():
+    """
+    Method to parse args from command sys.args. Uses python.argparser
+
+    `return` args, the list of parsed args as a argparser object
+    """
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--known_height_m", type=float, required=True, help="the known height of the object being investigated, in meters")
+    ap.add_argument("--methods", nargs='+', required=False, help="(P,S,T,Q, or L) the method(s) chosen to be applied for investigation, if none is chosen default is Linear")
+    ap.add_argument("--base", metavar="FILE",
+                    required=True, help="base image file for image merge")
+    ap.add_argument("--files", nargs='+', metavar="FILE", required=True,
+                    help="The list of files to be merged against base, the distance of the highlight in each will be found")
+    args = ap.parse_args()
+    return args
 
 def run_me(known_height, method_flags, base_file, infiles):
     """
@@ -380,42 +456,58 @@ def run_me(known_height, method_flags, base_file, infiles):
     `return` the list of results of upon execution
     """
 
-    flags_list = method_flags.split(",")
-
-    configs = {'P':Primary, 'S':Secondary, 'T':Tertiary, 'Q':Quaternary, 'L':Linear}
-
+    configs = {'P': Primary, 'S': Secondary, 'T': Tertiary, 'Q': Quaternary, 'L': Linear}
     df = Macro()
-    for flag in flags_list:
+    for flag in method_flags:
         for obj_file in infiles:
             df.add(configs[flag.upper()](known_height=known_height, obj_file=obj_file, base_file=base_file))
 
     results = df.run()
-    return results
+    return list(results)
 
-def main():
+def main(begin_index, end_index, render_sw=None):
+    """
+    Main method, intended to parse args and perform operation in order
 
+    """
     warnings.filterwarnings('ignore')
 
-    infiles = sys.argv[4:]  # argv[4:] = all of the files for the script to be run over
-    results = run_me(known_height=float(sys.argv[1]), method_flags=sys.argv[2], base_file=sys.argv[3],
-                     infiles=infiles)  # argv[1] =  0.124, height of object in meters, argv[3] = base image file pathname (absolute)
+    args = parse_args()
+    print 'Args:'
+    for arg in vars(args):
+        print '\t', arg, getattr(args, arg)
 
-    # res is the collection of results of each call ordered first by the method(s) chosen, then by the input files.
-    pprint(results)
+    files = args.files
+    results = run_me(known_height=args.known_height_m, method_flags=args.methods, base_file=args.base,infiles=files)
 
-    slideshow = []
-    for res in results[0:4]:       # for just linear: results[-3:]
-        image, text, location = os.path.join("Input", res[1]), str(res[2][0]), res[2][1]
-        im = text_on_image(image, text, location, color=(255, 0, 0))
-        im.save(os.path.join(directory, "slideshow", ntpath.basename(image)))
-        slideshow.append(os.path.join(directory, "slideshow", ntpath.basename(image)))
+    print '\n', color.UNDERLINE, 'Results:', ' ' * 50, color.END, '\n'
+    for dict in results:
+        key, val = dict.items()[0]
+        print color.UNDERLINE, key, ':', val, 'meters', color.END
+        for key, val in dict.items()[1:]:
+           print '\t', key, ':', val
 
-    for file in slideshow:
-        p = subprocess.Popen(["mspaint.exe", file])
-        p.wait()
+    directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    folder = os.path.join(directory, 'Distance', 'slideshow')
+
+    images = [f for f in listdir(folder) if isfile(join(folder, f))]
+    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+
+    # Used to display the 'slide show' of the images that are the result
+    execfile("C:\Users\Bob S\PycharmProjects\Image-Fusion\other_tools\slideshow.py")
+
+    # Open in ms paint as alternative
+    # if render_sw is not None:
+    #     for file in apply_distance_as_text(results[begin_index:end_index]):
+    #         p = subprocess.Popen([render_sw, file])
+    #         p.wait()
 
 if __name__ == '__main__':
 
-    main()
+    # args to be removed after testing
+    render_tool = "mspaint.exe"
+    begin_index = 0
+    end_index = 3
 
+    main(begin_index, end_index, render_tool)
     sys.exit(0)

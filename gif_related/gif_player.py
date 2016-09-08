@@ -12,7 +12,7 @@ By extending tkinter's label, we can apply the extended use of illustration to m
 self.frames stores the Image.tk.photoimages that are sequenced over based on the duration variable created animation.
 """
 
-class gifPlayer(Label):
+class gif_player(Label):
 
     def __init__(self, root, filename, duration=None):
         """
@@ -90,6 +90,6 @@ if __name__ == "__main__":
     """
 
     file = sys.argv[1]
-    player = gifPlayer(Tk(), file)
+    player = gif_player(Tk(), file)
     player.pack()
     player.run()

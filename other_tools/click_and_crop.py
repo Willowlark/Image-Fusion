@@ -1,9 +1,15 @@
-# import the necessary packages
-import argparse, cv2, os, sys
+import argparse, cv2, os
 from pprint import pprint
+from Tkinter import *
 
-# initialize the list of reference points and boolean indicating
-# whether cropping is being performed or not
+"""
+Script to easily extract a re-sized crop of any image using a simple gui
+
+EXAMPLE ARGS
+--input "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\Two Infrared.jpg" --output "C:\Users\Bob S\PycharmProjects\Image-Fusion\Output\Click_and_Crop_Output.jpg" --scale 4.0
+
+"""
+
 refPt = []
 cropping = False
 image = None
@@ -13,6 +19,7 @@ output_dir = os.path.join(cur_dir, 'Output')
 file_out = os.path.join(output_dir, 'dump.png')
 
 def click_and_crop(event, x, y, flags, param):
+
     # grab references to the global variables
     global refPt, cropping, image
 
@@ -36,7 +43,10 @@ def click_and_crop(event, x, y, flags, param):
         cv2.imshow("image", image)
 
 def close_and_exit():
-    # close all open windows
+    """
+    Close all windows and exit safely
+
+    """
     cv2.destroyAllWindows()
     sys.exit(0)
 
@@ -54,8 +64,9 @@ while True:
 
     # load the image, clone it, and setup the mouse callback function
     image = cv2.imread(args["input"])
+    cv2.imshow("image", image)
     clone = image.copy()
-    cv2.namedWindow("image")
+    window = cv2.namedWindow("image")
     cv2.setMouseCallback("image", click_and_crop)
 
     # keep looping until the 'q' key is pressed
@@ -90,6 +101,7 @@ while True:
 
     if args["output"]: cv2.imwrite(args["output"], roi)
 
+    print "Process Finished"
     pprint(args)
 
 close_and_exit()
