@@ -1,4 +1,4 @@
 import ImageMerge
 import PixelProcess
 
-all = ['ImageMerge', 'PixelProcess']
+__all__ = ['ImageMerge', 'PixelProcess']
