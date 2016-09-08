@@ -3,7 +3,7 @@ from PIL import Image, ImageDraw
 import sys
 import numpy as np
 
-cur_dir = os.path.dirname(os.path.realpath(__file__))
+cur_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 inp_dir = os.path.join(cur_dir, 'Input')
 
 sub_img_path = os.path.join(inp_dir, "in1_file.jpg")
@@ -35,6 +35,7 @@ def apply_border(img, points, color=(255,0,0), border=3):
 
 def main(demo=None):
 
+    show = []
     sub_img = cv2.imread(sub_img_path)
     tot_img = cv2.imread(base_img_path)
 
@@ -50,8 +51,7 @@ def main(demo=None):
     pts_base = np.array([top_left, top_right, bottom_right, bottom_left])
 
     if demo:
-        im.show()
-        raw_input("Press Enter to continue...")
+        show.append(im)
 
     ##############################
 
@@ -65,8 +65,7 @@ def main(demo=None):
     pts_moded = np.array([top_left, top_right, bottom_right, bottom_left])
 
     if demo:
-        im.show()
-        raw_input("Press Enter to continue...")
+        show.append(im)
 
     ##############################
 
@@ -79,8 +78,7 @@ def main(demo=None):
     im1 = Image.open(res_img_path)
 
     if demo:
-        im1.show()
-        raw_input("Press Enter to continue...")
+        show.append(im1)
 
     #############################
 
@@ -98,13 +96,16 @@ def main(demo=None):
             else:
                 tot_pix[i,j] = sub_pix[i,j]
 
-    im2.show()
+    # im2.show() # show image without border
     im2.save(res_img_path)
 
     img_out = apply_border(im2, points=[top_left, top_right, bottom_right, bottom_left])
     img_out.show()
+    show.append(im2)
 
-    raw_input("Press Enter to finish...")
+    if demo:
+        import slideshow
+        slideshow.slideshow(show)
 
 if __name__ == '__main__':
 

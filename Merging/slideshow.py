@@ -1,4 +1,4 @@
-import cv2, itertools
+import cv2, itertools, numpy
 from os import listdir
 from os.path import isfile, join
 
@@ -27,11 +27,11 @@ class slideshow():
                         break
                 if done:
                     break
-        else:   # for use in PIL images for now
+        else:
             done = False
             for image in itertools.cycle(folder):
 
-                cv2.imshow('image', image)
+                cv2.imshow('image', cv2.cvtColor(numpy.array(image), cv2.COLOR_RGB2BGR))
 
                 while True:
                     key = cv2.waitKey(1) & 0xFF

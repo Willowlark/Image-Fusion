@@ -27,7 +27,7 @@ class slideshow():
                         break
                 if done:
                     break
-        else:   # for use in PIL images for now
+        else:
             done = False
             for image in itertools.cycle(folder):
 

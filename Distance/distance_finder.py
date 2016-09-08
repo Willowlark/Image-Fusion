@@ -494,7 +494,8 @@ def main(begin_index, end_index, render_sw=None):
     cv2.namedWindow('image', cv2.WINDOW_NORMAL)
 
     # Used to display the 'slide show' of the images that are the result
-    execfile("C:\Users\Bob S\PycharmProjects\Image-Fusion\other_tools\slideshow.py")
+    import slideshow
+    slideshow.slideshow(folder)
 
     # Open in ms paint as alternative
     # if render_sw is not None:
