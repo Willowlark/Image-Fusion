@@ -9,8 +9,8 @@ import numpy as np
 from PIL import Image, ImageFont, ImageDraw
 
 import Console
-from gif_related import images2gif
-from gif_related.gif_player import gifPlayer
+import images2gif
+from gif_player import gif_player
 
 
 class Homography():
@@ -70,7 +70,7 @@ class Homography():
         apply_names(frames_dir)
 
         file_names = sorted(
-            ('gif_test/frames/' + fn for fn in os.listdir(frames_dir) if
+            (os.path.join(os.path.dirname(os.path.realpath(__file__)), 'gif_test', 'frames', fn) for fn in os.listdir(frames_dir) if
              fn.endswith('.png')))
 
         print 'frames:'
@@ -209,9 +209,9 @@ def debug_main():
     TODO remove after testing
     """
 
-    cur_dir = os.path.dirname(os.path.realpath(__file__))
-    frames_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'gif_test', 'frames')
-    inp_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Input')
+    cur_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    frames_dir = os.path.join(cur_dir, 'gif_test', 'frames')
+    inp_dir = os.path.join(cur_dir, 'Input')
 
     # apply_image_merge(os.path.join(inp_dir, 'IMG_0991.jpg'), os.path.join(inp_dir, 'IMG_0993.jpg'))
 
@@ -259,20 +259,19 @@ if __name__ == '__main__' :
     # applicable run-me
     cur_dir = os.path.dirname(os.path.realpath(__file__))
     frames_dir = os.path.join(cur_dir, 'gif_test', 'frames')
-    inp_dir = os.path.join(cur_dir, 'Input')
+    inp_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'Input', 'Homography')
+    gif_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'gif_test', 'res_gif.GIF')
 
-    gif_path = os.path.join(cur_dir, 'gif_test', 'res_gif.GIF')
+    bases = [os.path.join(inp_dir, 'Homography 2.jpg'), os.path.join(inp_dir, 'Homography 4.jpg'), os.path.join(inp_dir, 'Homography 6.jpg')]
+    tests = [os.path.join(inp_dir, 'Homography 1.jpg'), os.path.join(inp_dir, 'Homography 3.jpg'), os.path.join(inp_dir, 'Homography 5.jpg')]
+    dest = (os.path.join(inp_dir, 'Homography 4.jpg'), os.path.join(inp_dir, 'Homography 3.jpg'))
 
-    bases = [os.path.join(inp_dir, 'IMG_1022.jpg'), os.path.join(inp_dir, 'IMG_1024.jpg'), os.path.join(inp_dir, 'IMG_1026.jpg')]
-    tests = [os.path.join(inp_dir, 'IMG_1021.jpg'), os.path.join(inp_dir, 'IMG_1023.jpg'), os.path.join(inp_dir, 'IMG_1025.jpg')]
-    dest = (os.path.join(inp_dir, 'IMG_1024.jpg'), os.path.join(inp_dir, 'IMG_1023.jpg'))
-
-    clear_frames(frames_dir)
+    # clear_frames(os.path.join(cur_dir, 'gif_test', 'res_gif.GIF'))
 
     hg = Homography(base_imgs=bases, test_imgs=tests)
     hg.exe(gif_path, dest_index=1, save_first_frame=False)
 
     root = Tk()
-    anim = gifPlayer(root, gif_path)
+    anim = gif_player(root, gif_path)
     anim.pack()
     anim.run(root)
