@@ -96,16 +96,16 @@ def main(demo=None):
             else:
                 tot_pix[i,j] = sub_pix[i,j]
 
-    # im2.show() # show image without border
     im2.save(res_img_path)
 
     img_out = apply_border(im2, points=[top_left, top_right, bottom_right, bottom_left])
-    img_out.show()
-    show.append(im2)
+    if demo:
+        show.append(im2)
 
     if demo:
         import slideshow
         slideshow.slideshow(show)
+    print "Finishing"
 
 if __name__ == '__main__':
 

@@ -324,8 +324,8 @@ class Quaternary(Solution):
 class Linear(Solution):
     """
     The control method of finding object distance
-    Requires that subject whose distance is being determined be the object of calibration process.
-    and pixel height of image in subject file and control height variable (heigh_object_in_question)
+    Requires that subject whose distance is being determined must be the object of calibration process.
+    and pixel height of image in subject file and control height variable (height_object_in_question)
     """
     def __init__(self, base_file=None, obj_file=None, known_height=None):
         """
@@ -415,14 +415,14 @@ def apply_distance_as_text(list):
     `list` the list of images on which the text will be permanently drawn
     `return` the list of images, as pathnames, where the modified images are stored
     """
-
     directory = os.path.dirname(os.path.realpath(__file__))
     slideshow = []
     for res in list:
         image, text, location = res['File'], str(res['Distance']), res['loc_x']
         im = text_on_image(image, text, location, color=(255, 0, 0))
-        im.save(os.path.join(directory, "slideshow", os.path.basename(image)))
-        slideshow.append(os.path.join(directory, "slideshow", os.path.basename(image)))
+        slideshow.append(im)
+        # im.save(os.path.join(directory, "slideshow", os.path.basename(image)))
+        # slideshow.append(os.path.join(directory, "slideshow", os.path.basename(image)))
     return slideshow
 
 def parse_args():
@@ -465,7 +465,7 @@ def run_me(known_height, method_flags, base_file, infiles):
     results = df.run()
     return list(results)
 
-def main(begin_index, end_index, render_sw=None):
+def main():
     """
     Main method, intended to parse args and perform operation in order
 
@@ -480,6 +480,7 @@ def main(begin_index, end_index, render_sw=None):
     files = args.files
     results = run_me(known_height=args.known_height_m, method_flags=args.methods, base_file=args.base,infiles=files)
 
+    # print results
     print '\n', color.UNDERLINE, 'Results:', ' ' * 50, color.END, '\n'
     for dict in results:
         key, val = dict.items()[0]
@@ -487,28 +488,10 @@ def main(begin_index, end_index, render_sw=None):
         for key, val in dict.items()[1:]:
            print '\t', key, ':', val
 
-    directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    folder = os.path.join(directory, 'Distance', 'slideshow')
-
-    images = [f for f in listdir(folder) if isfile(join(folder, f))]
-    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-
-    # Used to display the 'slide show' of the images that are the result
     import slideshow
-    slideshow.slideshow(folder)
-
-    # Open in ms paint as alternative
-    # if render_sw is not None:
-    #     for file in apply_distance_as_text(results[begin_index:end_index]):
-    #         p = subprocess.Popen([render_sw, file])
-    #         p.wait()
+    slideshow.slideshow(apply_distance_as_text(results))
 
 if __name__ == '__main__':
 
-    # args to be removed after testing
-    render_tool = "mspaint.exe"
-    begin_index = 0
-    end_index = 3
-
-    main(begin_index, end_index, render_tool)
+    main()
     sys.exit(0)

@@ -1,49 +1,27 @@
-import cv2, itertools, numpy
-from os import listdir
-from os.path import isfile, join
+import cv2, itertools
+import numpy, sys
 
 class slideshow():
 
-    def __init__(self, folder):
-        if isinstance(folder, basestring):
-            images = [f for f in listdir(folder) if isfile(join(folder, f))]
-            cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+    def __init__(self, files):
 
-            done = False
-            for image in itertools.cycle(images):
+        done = False
+        for image in itertools.cycle(files):
 
-                img = cv2.imread(folder + "/" + image)
-                cv2.imshow('image', img)
+            cv2.imshow('image', cv2.cvtColor(numpy.array(image), cv2.COLOR_RGB2BGR))
 
-                while True:
-                    key = cv2.waitKey(1) & 0xFF
+            while True:
+                key = cv2.waitKey(1) & 0xFF
 
-                    if key == ord("f") or key == ord('\n'):
-                        break
-
-                    if key == ord("q"):
-                        cv2.destroyAllWindows()
-                        done = True
-                        break
-                if done:
+                if key == ord("f") or key == ord('n'):
                     break
-        else:
-            done = False
-            for image in itertools.cycle(folder):
 
-                cv2.imshow('image', cv2.cvtColor(numpy.array(image), cv2.COLOR_RGB2BGR))
-
-                while True:
-                    key = cv2.waitKey(1) & 0xFF
-
-                    if key == ord("f") or key == ord('\n'):
-                        break
-
-                    if key == ord("q"):
-                        cv2.destroyAllWindows()
-                        done = True
-                        break
-                if done:
+                if key == ord("q") or cv2.getWindowProperty('image', 0) < 0:
+                    cv2.destroyAllWindows()
+                    done = True
                     break
+
+            if done:
+                break
 
 
