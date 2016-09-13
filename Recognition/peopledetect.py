@@ -22,9 +22,9 @@ def draw_detections(img, rects, thickness = 1):
         cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), (0, 255, 0), thickness)
 
 
-def detect(inputs):
+def detect(output, inputs):
 
-    print help_message
+    # print help_message
 
     hog = cv2.HOGDescriptor()
     hog.setSVMDetector( cv2.HOGDescriptor_getDefaultPeopleDetector() )
@@ -49,6 +49,7 @@ def detect(inputs):
         draw_detections(img, found_filtered, 3)
         print '%d (%d) found' % (len(found_filtered), len(found))
         cv2.imshow('img', img)
+        cv2.imwrite(output, img)
         ch = 0xFF & cv2.waitKey()
         if ch == 27:
             break

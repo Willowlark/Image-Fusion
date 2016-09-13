@@ -24,6 +24,7 @@ class Console(cmd.Cmd):
         self.m = ImageMerge.Merger(output)
         self.prompt = '> '
 
+    # These methods merge images using the mergers internal state.
     def do_merge(self, images):
         """
         `Author` : Bill Clark
@@ -53,6 +54,8 @@ class Console(cmd.Cmd):
         paths = self.splitPaths(images)
         self.m.mergeAs(paths[0], *paths[1:])
 
+
+    # These methods change the actions and checks used by the remote.
     def do_redhighlight(self, arg):
         """
         `Author` : Bill Clark
@@ -87,6 +90,8 @@ class Console(cmd.Cmd):
         When a pixel is checked true, take the new pixel, if it's not (0,0,0)"""
         self.m.processor.setActorCommand(PixelProcess.TakeNonEmptySecondCommand())
 
+
+    # These commands change the remote's functionality.
     def do_extractremote(self, arg):
         """
         `Author` : Bill Clark
@@ -100,6 +105,8 @@ class Console(cmd.Cmd):
         Set the remote to a basic one."""
         self.m.processor = PixelProcess.PixelRemote()
 
+
+    # These commands control the groups created by extract remotes.
     def do_gengroups(self, arg):
         """
         `Author` : Bill Clark
@@ -142,13 +149,16 @@ class Console(cmd.Cmd):
         if not path: print 'Specify the save path.'
         if self.groups and path: self.groups.first().save(path, self.m.processor.pixels)
 
+
+    # These methods use external modules to provide merging and utilities. They
+    # don't use the internally tracked image.
     def do_detect(self, images):
         """
         `Author` : Bill Clark
 
-        Detect people in any number of images."""
+        Takes a path to save the last detection to, then detects people in any number of images."""
         paths = self.splitPaths(images)
-        peopledetect.detect(paths)
+        peopledetect.detect(paths[0], paths[1:])
     def do_cropfind(self, images):
         """
         `Author` : Bill Clark
@@ -162,10 +172,11 @@ class Console(cmd.Cmd):
 
         Given an image which contains a second, smaller image, find where the smaller image fits
         into the other. Source image followed by the smaller, contained template.
+        Parameters are the output path, the larger image, and the smaller image.
         """
         paths = self.splitPaths(images)
-        TemplateMatcher.execute(paths[0], paths[1], 1.0)
-        TemplateMatcher.execute(paths[0], paths[1], 0.5)
+        TemplateMatcher.execute(paths[0][:-4]+' 1'+paths[0][-4:], paths[1], paths[2], 1.0)
+        TemplateMatcher.execute(paths[0][:-4]+' 2'+paths[0][-4:], paths[1], paths[2], 0.5)
     def do_pixelshift(self, images):
         """
         `Author`: Bill Clark
@@ -176,6 +187,8 @@ class Console(cmd.Cmd):
         paths = self.splitPaths(images)
         Shift.main(paths[0], paths[1])
 
+
+    # these are utility commands.
     def do_save(self, arg):
         """
         `Author` : Bill Clark
@@ -190,6 +203,7 @@ class Console(cmd.Cmd):
         Show the image."""
         self.m.show()
 
+    # Internal utility to split a string of paths.
     def splitPaths(self, string):
         """
         `Author` : Bill Clark

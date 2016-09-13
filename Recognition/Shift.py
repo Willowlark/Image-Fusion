@@ -21,7 +21,7 @@ def tupleCompare(t, tt):
     return score
 
 
-def main(image1, image2, accuracy=3, centers=5):
+def main(image1, image2, accuracy=10, centers=5):
     """
     `Author`: Bill Clark
 

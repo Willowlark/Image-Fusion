@@ -5,9 +5,9 @@ import imutils
 import glob
 import cv2
 
-debug = 1
+debug = 0
 
-def execute(inImage, inTemplate, linTop):
+def execute(output, inImage, inTemplate, linTop):
     """
     `Author`: Bill Clark, Adrian Rosebrock
 
@@ -75,6 +75,7 @@ def execute(inImage, inTemplate, linTop):
 
     cv2.rectangle(origimage, (startX, startY), (endX, endY), (0, 0, 255), 2)
     cv2.imshow("Image", origimage)
+    cv2.imwrite(output, origimage)
     cv2.waitKey(0)
 
 if __name__ == "__main__":
