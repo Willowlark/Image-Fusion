@@ -163,7 +163,8 @@ class Console(cmd.Cmd):
         """
         `Author` : Bill Clark
 
-        Given an image thats a subset of this image, find where that image fits into the other."""
+        Given an image thats a subset of this image, find where that image fits into the other.
+        Template matching is the better version of this. """
         paths = self.splitPaths(images)
         print self.m.cropFind(paths[0], paths[1])
     def do_templatematch(self, images):
@@ -195,7 +196,7 @@ class Console(cmd.Cmd):
 
         Save the image."""
         self.m.save()
-        print self.m.outfile
+        # print self.m.outfile
     def do_show(self, arg):
         """
         `Author` : Bill Clark
@@ -213,6 +214,10 @@ class Console(cmd.Cmd):
 
 if __name__ == "__main__":
     con = Console('Output\ImFuse.jpg')
-    con.onecmd('?')
-    con.cmdloop()
+    while 1:
+        try:
+            con.onecmd('?')
+            con.cmdloop()
+        except IOError:
+            print "Your input file was not found, Command failed."
 
