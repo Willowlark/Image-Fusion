@@ -1,10 +1,9 @@
 from __future__ import division
-from pprint import pprint
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ExifTags import TAGS
-import math, os, traceback, sys, warnings, json, Console, subprocess, argparse, itertools, cv2
-from os import listdir
-from os.path import isfile, join
+import math, os, traceback, sys, warnings, json, Console, argparse
+from pprint import pprint
+
 
 class color:
    PURPLE = '\033[95m'
@@ -29,6 +28,9 @@ EXAMPLE ARGS:
 
 ANOTHER COMMAND LINE EXAMPLE:
 --known_height_m 0.124 --methods L --base "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" --files "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_two.jpg" "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_half.jpg"
+
+ANOTHER EXAMPLE USING COMMAND LINE:
+--known_height_m 1.82 --methods L P --base "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\One Visual.jpg" --files "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\One Infrared.jpg"
 
 INDEPENDENT CALL EXAMPLE:
 procedure = Primary(base_file=base.jpg, obj_file=input.jpg, known_height=1.82)
@@ -324,8 +326,8 @@ class Quaternary(Solution):
 class Linear(Solution):
     """
     The control method of finding object distance
-    Requires that subject whose distance is being determined be the object of calibration process.
-    and pixel height of image in subject file and control height variable (heigh_object_in_question)
+    Requires that subject whose distance is being determined must be the object of calibration process.
+    and pixel height of image in subject file and control height variable (height_object_in_question)
     """
     def __init__(self, base_file=None, obj_file=None, known_height=None):
         """
@@ -393,7 +395,7 @@ class Macro:
             ret.append(entry)
         return ret
 
-def text_on_image(image, text, location=(0, 0), color=(255,255,255)):
+def text_on_image(image, text, size=20, location=(0, 0), color=(255,255,255)):
     """
     Using ImageDraw, the image can be labeled with a name in the picture
 
@@ -404,7 +406,7 @@ def text_on_image(image, text, location=(0, 0), color=(255,255,255)):
     """
     img = Image.open(image)
     draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype("arial.ttf", 20)
+    font = ImageFont.truetype("arial.ttf", size)
     draw.text(location, text, color, font=font)
     return img
 
@@ -413,16 +415,14 @@ def apply_distance_as_text(list):
     Method as loop to apply the text to series of images
 
     `list` the list of images on which the text will be permanently drawn
-    `return` the list of images, as pathnames, where the modified images are stored
+    `return` the list of images, as path-names, where the modified images are stored
     """
-
-    directory = os.path.dirname(os.path.realpath(__file__))
     slideshow = []
     for res in list:
-        image, text, location = res['File'], str(res['Distance']), res['loc_x']
-        im = text_on_image(image, text, location, color=(255, 0, 0))
-        im.save(os.path.join(directory, "slideshow", os.path.basename(image)))
-        slideshow.append(os.path.join(directory, "slideshow", os.path.basename(image)))
+        size = 20
+        image, text, location = res['File'], str(res['Distance']), (res['loc_x'][0], res['loc_y'][0] - 25)
+        im = text_on_image(image, text, size, location, color=(255, 0, 0))
+        slideshow.append(im)
     return slideshow
 
 def parse_args():
@@ -465,7 +465,7 @@ def run_me(known_height, method_flags, base_file, infiles):
     results = df.run()
     return list(results)
 
-def main(begin_index, end_index, render_sw=None):
+def main():
     """
     Main method, intended to parse args and perform operation in order
 
@@ -480,6 +480,7 @@ def main(begin_index, end_index, render_sw=None):
     files = args.files
     results = run_me(known_height=args.known_height_m, method_flags=args.methods, base_file=args.base,infiles=files)
 
+    # print results
     print '\n', color.UNDERLINE, 'Results:', ' ' * 50, color.END, '\n'
     for dict in results:
         key, val = dict.items()[0]
@@ -487,27 +488,10 @@ def main(begin_index, end_index, render_sw=None):
         for key, val in dict.items()[1:]:
            print '\t', key, ':', val
 
-    directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    folder = os.path.join(directory, 'Distance', 'slideshow')
-
-    images = [f for f in listdir(folder) if isfile(join(folder, f))]
-    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-
-    # Used to display the 'slide show' of the images that are the result
-    execfile("C:\Users\Bob S\PycharmProjects\Image-Fusion\other_tools\slideshow.py")
-
-    # Open in ms paint as alternative
-    # if render_sw is not None:
-    #     for file in apply_distance_as_text(results[begin_index:end_index]):
-    #         p = subprocess.Popen([render_sw, file])
-    #         p.wait()
+    import slideshow
+    slideshow.slideshow(apply_distance_as_text(results))
 
 if __name__ == '__main__':
 
-    # args to be removed after testing
-    render_tool = "mspaint.exe"
-    begin_index = 0
-    end_index = 3
-
-    main(begin_index, end_index, render_tool)
+    main()
     sys.exit(0)
