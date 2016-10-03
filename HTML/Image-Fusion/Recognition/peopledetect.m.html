@@ -1095,9 +1095,9 @@ table {
         <span class="n">cv2</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">pad_w</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">pad_h</span><span class="p">),</span> <span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">w</span><span class="o">-</span><span class="n">pad_w</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">h</span><span class="o">-</span><span class="n">pad_h</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">thickness</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
 
-    <span class="k">print</span> <span class="n">help_message</span>
+    <span class="c1"># print help_message</span>
 
     <span class="n">hog</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">HOGDescriptor</span><span class="p">()</span>
     <span class="n">hog</span><span class="o">.</span><span class="n">setSVMDetector</span><span class="p">(</span> <span class="n">cv2</span><span class="o">.</span><span class="n">HOGDescriptor_getDefaultPeopleDetector</span><span class="p">()</span> <span class="p">)</span>
@@ -1122,6 +1122,7 @@ table {
         <span class="n">draw_detections</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">found_filtered</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> (</span><span class="si">%d</span><span class="s1">) found&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">found_filtered</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">))</span>
         <span class="n">cv2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="s1">&#39;img&#39;</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
+        <span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
         <span class="n">ch</span> <span class="o">=</span> <span class="mh">0xFF</span> <span class="o">&amp;</span> <span class="n">cv2</span><span class="o">.</span><span class="n">waitKey</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="mi">27</span><span class="p">:</span>
             <span class="k">break</span>
@@ -1150,7 +1151,7 @@ table {
       
   <div class="item">
     <div class="name def" id="Image-Fusion.Recognition.peopledetect.detect">
-    <p>def <span class="ident">detect</span>(</p><p>inputs)</p>
+    <p>def <span class="ident">detect</span>(</p><p>output, inputs)</p>
     </div>
     
 
@@ -1159,9 +1160,9 @@ table {
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-Image-Fusion.Recognition.peopledetect.detect', this);">Show source &equiv;</a></p>
   <div id="source-Image-Fusion.Recognition.peopledetect.detect" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
 
-    <span class="k">print</span> <span class="n">help_message</span>
+    <span class="c1"># print help_message</span>
 
     <span class="n">hog</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">HOGDescriptor</span><span class="p">()</span>
     <span class="n">hog</span><span class="o">.</span><span class="n">setSVMDetector</span><span class="p">(</span> <span class="n">cv2</span><span class="o">.</span><span class="n">HOGDescriptor_getDefaultPeopleDetector</span><span class="p">()</span> <span class="p">)</span>
@@ -1186,6 +1187,7 @@ table {
         <span class="n">draw_detections</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">found_filtered</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> (</span><span class="si">%d</span><span class="s1">) found&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">found_filtered</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">))</span>
         <span class="n">cv2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="s1">&#39;img&#39;</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
+        <span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
         <span class="n">ch</span> <span class="o">=</span> <span class="mh">0xFF</span> <span class="o">&amp;</span> <span class="n">cv2</span><span class="o">.</span><span class="n">waitKey</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="mi">27</span><span class="p">:</span>
             <span class="k">break</span>

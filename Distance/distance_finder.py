@@ -65,7 +65,7 @@ class Solution:
         self.height_object_in_question = known_height
         self.focal_len = None
 
-        with open(os.path.join(directory, 'json', 'cameras.json'), 'r') as data_file:
+        with open(os.path.join(directory, 'Distance/json', 'cameras.json'), 'r') as data_file:
             data = json.load(data_file)
             self.camera_dict = data
 
@@ -175,7 +175,7 @@ class Primary(Solution):
         """
 
         Solution.__init__(self, base_file, obj_file, known_height)
-        with open(os.path.join(directory, 'json', 'calib_info.json'), 'r') as fp:
+        with open(os.path.join(directory, 'Distance/json', 'calib_info.json'), 'r') as fp:
             json_data = json.load(fp)
             try:
                 self.focal_len = json_data["focal_len"]
@@ -338,7 +338,7 @@ class Linear(Solution):
         `known_height` the known height in meters of the object in the picture
         """
         Solution.__init__(self, base_file, obj_file, known_height)
-        with open(os.path.join(directory, 'json', 'calib_info.json'), 'r') as fp:
+        with open(os.path.join(directory, 'Distance/json', 'calib_info.json'), 'r') as fp:
             json_data = json.load(fp)
             try:
                 self.known_height_px = json_data["control_object_height_px"]

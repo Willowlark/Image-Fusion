@@ -1076,9 +1076,9 @@ table {
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">cv2</span>
 
-<span class="n">debug</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">debug</span> <span class="o">=</span> <span class="mi">0</span>
 
-<span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="n">inImage</span><span class="p">,</span> <span class="n">inTemplate</span><span class="p">,</span> <span class="n">linTop</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">inImage</span><span class="p">,</span> <span class="n">inTemplate</span><span class="p">,</span> <span class="n">linTop</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    `Author`: Bill Clark, Adrian Rosebrock</span>
 
@@ -1146,6 +1146,7 @@ table {
 
     <span class="n">cv2</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">origimage</span><span class="p">,</span> <span class="p">(</span><span class="n">startX</span><span class="p">,</span> <span class="n">startY</span><span class="p">),</span> <span class="p">(</span><span class="n">endX</span><span class="p">,</span> <span class="n">endY</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
     <span class="n">cv2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="s2">&quot;Image&quot;</span><span class="p">,</span> <span class="n">origimage</span><span class="p">)</span>
+    <span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">origimage</span><span class="p">)</span>
     <span class="n">cv2</span><span class="o">.</span><span class="n">waitKey</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
@@ -1172,7 +1173,7 @@ table {
       
   <div class="item">
     <div class="name def" id="Image-Fusion.Recognition.TemplateMatcher.execute">
-    <p>def <span class="ident">execute</span>(</p><p>inImage, inTemplate, linTop)</p>
+    <p>def <span class="ident">execute</span>(</p><p>output, inImage, inTemplate, linTop)</p>
     </div>
     
 
@@ -1193,7 +1194,7 @@ and out.jpg.</p>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-Image-Fusion.Recognition.TemplateMatcher.execute', this);">Show source &equiv;</a></p>
   <div id="source-Image-Fusion.Recognition.TemplateMatcher.execute" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="n">inImage</span><span class="p">,</span> <span class="n">inTemplate</span><span class="p">,</span> <span class="n">linTop</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">inImage</span><span class="p">,</span> <span class="n">inTemplate</span><span class="p">,</span> <span class="n">linTop</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    `Author`: Bill Clark, Adrian Rosebrock</span>
 
@@ -1261,6 +1262,7 @@ and out.jpg.</p>
 
     <span class="n">cv2</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">origimage</span><span class="p">,</span> <span class="p">(</span><span class="n">startX</span><span class="p">,</span> <span class="n">startY</span><span class="p">),</span> <span class="p">(</span><span class="n">endX</span><span class="p">,</span> <span class="n">endY</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
     <span class="n">cv2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="s2">&quot;Image&quot;</span><span class="p">,</span> <span class="n">origimage</span><span class="p">)</span>
+    <span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">origimage</span><span class="p">)</span>
     <span class="n">cv2</span><span class="o">.</span><span class="n">waitKey</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 
