@@ -7,15 +7,15 @@ The main function of this script will write to the fixed location file, json/cal
 By running the main script on the example arguments specified below will yield the calib_json file to store the focal_length info to be accessed by distance_finder.py.
 
 Example ARGS:
---base "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_base.jpg" --calib "C:\Users\Bob S\PycharmProjects\Image-Fusion\Input\IMG_calib.jpg" --known_height_m 0.124 --known_distance_m 1.0
+--base "C:\Users\Bob S\PycharmProjects\docs\Input\IMG_base.jpg" --calib "C:\Users\Bob S\PycharmProjects\docs\Input\IMG_calib.jpg" --known_height_m 0.124 --known_distance_m 1.0
 ...produces JSON of following format:
 {
     "height_object_in_question": 0.124,
     "focal_len": 556.4516129032259,
     "dist_object_in_question": 1.0,
     "control_object_height_px": 69,
-    "calibration_image": "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_calib.jpg",
-    "base_image": "C:\\Users\\Bob S\\PycharmProjects\\Image-Fusion\\Input\\IMG_base.jpg"
+    "calibration_image": "C:\\Users\\Bob S\\PycharmProjects\\docs\\Input\\IMG_calib.jpg",
+    "base_image": "C:\\Users\\Bob S\\PycharmProjects\\docs\\Input\\IMG_base.jpg"
 }
 
   <OR>
